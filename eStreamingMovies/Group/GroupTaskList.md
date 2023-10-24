@@ -53,7 +53,7 @@ This work will also be performed during group meetings following the completion 
 		- Default Values (if any)
 		- Relationships & Multiplicites 
 
-	- E. Sales:
+	- E. Sales Schema:
 		- Employee, SubscriptionTier, Payment
 		- UML Coloring
 		- ID Sequences
@@ -65,7 +65,7 @@ This work will also be performed during group meetings following the completion 
 		- Default Values
 		- Relationships & Multiplicites 
 
-	- F. Industry:
+	- F. Industry Schema:
 		- Content, Talent, ContentTalent, Genre
 		- UML Coloring
 		- ID Sequences
@@ -73,7 +73,7 @@ This work will also be performed during group meetings following the completion 
 		- Default Values
 		- Relationships & Multiplicites 
 
-	- G. Client:
+	- G. Client Schema:
 		- Client, Device, DeviceType, WatchHistory, Subscription, PaymentType, CreditCard, ElectronicPayment
 		- UML Coloring
 		- ID Sequences

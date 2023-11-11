@@ -1,0 +1,13 @@
+"Physical Name","Type","Value","Physical Name","Definition","Name","Author","Comments","Event","Extended Notes Order","Importance","Migrate","Modified Time","Note Status"
+BCK_TemplateTable_EndDateGTEStartDate,User-Defined,(udpColumnEndDate) >= (udpColumnStartDate),,,,,,,,,,,
+Movie_genre,Valid Values,"@col IN ('AA', 'AN', 'CO', 'DO', 'DR', 'FA', 'CL', 'HO', 'MY', 'SF', 'WS')",AA,,,,,,,,,,
+Movie_genre,Valid Values,"@col IN ('AA', 'AN', 'CO', 'DO', 'DR', 'FA', 'CL', 'HO', 'MY', 'SF', 'WS')",AN,,,,,,,,,,
+Movie_genre,Valid Values,"@col IN ('AA', 'AN', 'CO', 'DO', 'DR', 'FA', 'CL', 'HO', 'MY', 'SF', 'WS')",CL,,,,,,,,,,
+Movie_genre,Valid Values,"@col IN ('AA', 'AN', 'CO', 'DO', 'DR', 'FA', 'CL', 'HO', 'MY', 'SF', 'WS')",CO,,,,,,,,,,
+Movie_genre,Valid Values,"@col IN ('AA', 'AN', 'CO', 'DO', 'DR', 'FA', 'CL', 'HO', 'MY', 'SF', 'WS')",DO,,,,,,,,,,
+Movie_genre,Valid Values,"@col IN ('AA', 'AN', 'CO', 'DO', 'DR', 'FA', 'CL', 'HO', 'MY', 'SF', 'WS')",DR,,,,,,,,,,
+Movie_genre,Valid Values,"@col IN ('AA', 'AN', 'CO', 'DO', 'DR', 'FA', 'CL', 'HO', 'MY', 'SF', 'WS')",FA,,,,,,,,,,
+Movie_genre,Valid Values,"@col IN ('AA', 'AN', 'CO', 'DO', 'DR', 'FA', 'CL', 'HO', 'MY', 'SF', 'WS')",HO,,,,,,,,,,
+Movie_genre,Valid Values,"@col IN ('AA', 'AN', 'CO', 'DO', 'DR', 'FA', 'CL', 'HO', 'MY', 'SF', 'WS')",MY,,,,,,,,,,
+Movie_genre,Valid Values,"@col IN ('AA', 'AN', 'CO', 'DO', 'DR', 'FA', 'CL', 'HO', 'MY', 'SF', 'WS')",SF,,,,,,,,,,
+Movie_genre,Valid Values,"@col IN ('AA', 'AN', 'CO', 'DO', 'DR', 'FA', 'CL', 'HO', 'MY', 'SF', 'WS')",WS,,,,,,,,,,

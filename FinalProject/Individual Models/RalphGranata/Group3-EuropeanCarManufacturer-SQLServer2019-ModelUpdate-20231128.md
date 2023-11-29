@@ -39,4 +39,5 @@ TODO:
 - Add triggers.
 - Add hash functions.
 - Add indexing.
+- Add definitions to all columns, & domains.
 - Create views.

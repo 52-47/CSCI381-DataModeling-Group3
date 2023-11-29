@@ -1,4 +1,5 @@
-# SQL Server 2019 Model Update Notes - 11/24/2023 ~ 11/28/2023
+# SQL Server 2019 
+# Model Update Notes - 11/24/2023 ~ 11/28/2023
 - Created SQL Server 2019 Erwin Template
   - Diagrams, Model Properties
   
@@ -32,6 +33,9 @@
     - More to follow...
   - Added Sequence objects for all primary keys with associated defaults (1:1 mappings)
 
+# Model Update Notes - 11/29/2023
+- Added spaces to all table names and columns in LDM only.
+- Merged definitions from Chuan's model
 
 TODO:
 - Sweep and review all schemas, tables, columns, domains (and their data types).
@@ -39,5 +43,4 @@ TODO:
 - Add triggers.
 - Add hash functions.
 - Add indexing.
-- Add definitions to all columns, & domains.
 - Create views.

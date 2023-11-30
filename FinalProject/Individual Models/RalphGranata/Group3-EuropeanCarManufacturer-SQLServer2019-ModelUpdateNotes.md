@@ -36,6 +36,7 @@
 # Model Update Notes - 11/29/2023
 - Added spaces to all table names and columns in LDM only.
 - Merged definitions from Chuan's model
+- Removed first & last name columns from tables to match data.
 
 TODO:
 - Sweep and review all schemas, tables, columns, domains (and their data types).

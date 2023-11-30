@@ -18,7 +18,6 @@
   - MarketingCategory (eliminated)
     - Moved MarketingType column to ManufacturerVehicleMake table.
 
-
 - New Tables:
   - DbSecurity.UserAuthorization table & necessary columns
   - Audit history tables for triggers
@@ -38,10 +37,18 @@
 - Merged definitions from Chuan's model
 - Removed first & last name columns from tables to match data.
 
+# Model Update Notes - 11/30/2023
+- Finalized Domains/Datatypes
+- Added remaining defaults & constraints to application tables.
+- Created working DDL and Data Insertion to test view creations.
+- Re-added StockCode to SalesOrderDetail (and history table) for multi-table queries on VehicleStock table since the ID (FK) in SalesOrderDetail will be null unless we have the time to manipulate the data.
+- Added double quote delimiter to all constraints.
+
+
 TODO:
-- Sweep and review all schemas, tables, columns, domains (and their data types).
-- Add remaining defaults and contraints where necessary throughout the data model.
 - Add triggers.
 - Add hash functions.
 - Add indexing.
 - Create views.
+- Add subject areas.
+- Generate Reports for presentation.

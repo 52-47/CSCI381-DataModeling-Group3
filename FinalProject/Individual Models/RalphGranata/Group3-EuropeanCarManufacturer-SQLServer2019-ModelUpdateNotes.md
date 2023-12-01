@@ -44,10 +44,14 @@
 - Re-added StockCode to SalesOrderDetail (and history table) for multi-table queries on VehicleStock table since the ID (FK) in SalesOrderDetail will be null unless we have the time to manipulate the data.
 - Added double quote delimiter to all constraints.
 
+# Model Update Notes - 12/01/2023
+- Added triggers
+- Added ITVFs
+- Bound to table
+
 
 TODO:
-- Add triggers.
-- Add hash functions.
+- Find out how to override erwin triggers with custom ones in FET
 - Add indexing.
 - Create views.
 - Add subject areas.

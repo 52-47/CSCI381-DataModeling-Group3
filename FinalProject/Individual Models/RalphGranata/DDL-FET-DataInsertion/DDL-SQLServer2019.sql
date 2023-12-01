@@ -2530,7 +2530,8 @@ CREATE TABLE "Sales"."SalesOrderVehicleDetail"
 	"PriorRowLevelHashKey" "sdHashKey"."RowLevelHashKey" ,
 	"FireAuditTrigger"   "sdFlag"."FlagYesNoString" 
 	CONSTRAINT "DF_Sales_SalesOrderVehicleDetail_FireAuditTrigger"
-		 DEFAULT  'N'
+		 DEFAULT  'N',
+	"StockCode"          "sdShortTextString"."StockCode"  NOT NULL 
 )
 go
 
@@ -2645,6 +2646,13 @@ EXEC sp_addextendedproperty
 @level2type = N'COLUMN', @level2name = N'FireAuditTrigger'
 go
 
+EXEC sp_addextendedproperty
+@name = N'MS_Description', @value = N'The stock code of a vehicle',
+@level0type = N'SCHEMA', @level0name = N'Sales',
+@level1type = N'TABLE', @level1name = N'SalesOrderVehicleDetail',
+@level2type = N'COLUMN', @level2name = N'StockCode'
+go
+
 CREATE TABLE "Audit"."SalesSalesOrderVehicleDetailHistory"
 ( 
 	"SalesOrderVehicleDetailId" "sdKey"."SurrogateKeyInteger"  NOT NULL ,
@@ -2652,7 +2660,7 @@ CREATE TABLE "Audit"."SalesSalesOrderVehicleDetailHistory"
 	"LineItemNumber"     "sdSequenceNumber"."LineItemNumber"  NOT NULL ,
 	"SalePrice"          "sdNumber"."Currency"  NOT NULL ,
 	"LineItemDiscount"   "sdNumber"."Currency"  NOT NULL ,
-	"ManufacturerVehicleStockId" "sdKey"."SurrogateKeyInteger" ,
+	"ManufacturerVehicleStockId" "sdKey"."SurrogateKeyInteger"  NULL ,
 	"UserAuthorizationId" "sdKey"."SurrogateKeyInteger"  NOT NULL ,
 	"SysStartTime"       "sdDateTime"."DateTimestamp"  NULL ,
 	"SysEndTime"         "sdDateTime"."DateTimestamp"  NULL ,
@@ -2669,7 +2677,8 @@ CREATE TABLE "Audit"."SalesSalesOrderVehicleDetailHistory"
 	"AuditDateTimeStamp" "sdDateTime"."DateTimestamp" 
 	CONSTRAINT "DF_SalesSalesOrderVehicleDetailHistory_AuditDateTimeStamp"
 		 DEFAULT  sysdatetime(),
-	"DBAction"           "sdAudit"."DbAction"  NOT NULL 
+	"DBAction"           "sdAudit"."DbAction"  NOT NULL ,
+	"StockCode"          "sdShortTextString"."StockCode"  NOT NULL 
 )
 go
 
@@ -2810,6 +2819,13 @@ EXEC sp_addextendedproperty
 @level0type = N'SCHEMA', @level0name = N'Audit',
 @level1type = N'TABLE', @level1name = N'SalesSalesOrderVehicleDetailHistory',
 @level2type = N'COLUMN', @level2name = N'DBAction'
+go
+
+EXEC sp_addextendedproperty
+@name = N'MS_Description', @value = N'The stock code of a vehicle',
+@level0type = N'SCHEMA', @level0name = N'Audit',
+@level1type = N'TABLE', @level1name = N'SalesSalesOrderVehicleDetailHistory',
+@level2type = N'COLUMN', @level2name = N'StockCode'
 go
 
 CREATE TABLE "Audit"."SalesSalesOrderVehicleHistory"
@@ -3265,12 +3281,12 @@ go
 
 ALTER TABLE "Locale"."Country"
 	ADD CONSTRAINT "CK_Locale_Country_CountryISO3"
-		CHECK  ( CountryISO3 LIKE '[A-Z][A-Z][A-Z]' ) 
+		CHECK  ( "CountryISO3" LIKE '[A-Z][A-Z][A-Z]' ) 
 go
 
 ALTER TABLE "Locale"."Country"
 	ADD CONSTRAINT "CK_Locale_Country_CountryISO2"
-		CHECK  ( CountryISO2 LIKE '[A-Z][A-Z]' ) 
+		CHECK  ( "CountryISO2" LIKE '[A-Z][A-Z]' ) 
 go
 
 ALTER TABLE "Locale"."Country"
@@ -3285,12 +3301,12 @@ go
 
 ALTER TABLE "Locale"."Country"
 	ADD CONSTRAINT "CK_Locale_Country_FireAuditTrigger"
-		CHECK  ( FireAuditTrigger='Y' OR FireAuditTrigger='N' ) 
+		CHECK  ( "FireAuditTrigger"='Y' OR "FireAuditTrigger"='N' ) 
 go
 
 
 ALTER TABLE "Locale"."Country"
-	ADD CONSTRAINT "FK_Country_UserAuthorization" FOREIGN KEY ("UserAuthorizationId") REFERENCES "DbSecurity"."UserAuthorization"("UserAuthorizationId")
+	ADD CONSTRAINT "FK_Locale.Country_DbSecurity.UserAuthorization" FOREIGN KEY ("UserAuthorizationId") REFERENCES "DbSecurity"."UserAuthorization"("UserAuthorizationId")
 		ON DELETE NO ACTION
 		ON UPDATE NO ACTION
 go
@@ -3298,12 +3314,12 @@ go
 
 ALTER TABLE "Sales"."Customer"
 	ADD CONSTRAINT "CK_Sales_Customer_IsCustomerReseller"
-		CHECK  ( IsCustomerReseller=0 OR IsCustomerReseller=1 ) 
+		CHECK  ( "IsCustomerReseller"=0 OR "IsCustomerReseller"=1 ) 
 go
 
 ALTER TABLE "Sales"."Customer"
 	ADD CONSTRAINT "BCK_TemplateTable_ValidBit_161407054"
-		CHECK  ( IsCustomerCreditRisk=0 OR IsCustomerCreditRisk=1 ) 
+		CHECK  ( "IsCustomerCreditRisk"=0 OR "IsCustomerCreditRisk"=1 ) 
 go
 
 ALTER TABLE "Sales"."Customer"
@@ -3318,18 +3334,18 @@ go
 
 ALTER TABLE "Sales"."Customer"
 	ADD CONSTRAINT "CK_Sales_Customer_FireAuditTrigger"
-		CHECK  ( FireAuditTrigger='Y' OR FireAuditTrigger='N' ) 
+		CHECK  ( "FireAuditTrigger"='Y' OR "FireAuditTrigger"='N' ) 
 go
 
 
 ALTER TABLE "Sales"."Customer"
-	ADD CONSTRAINT "FK_Customer_Country" FOREIGN KEY ("CountryId") REFERENCES "Locale"."Country"("CountryId")
+	ADD CONSTRAINT "FK_Sales.Customer_Locale.Country" FOREIGN KEY ("CountryId") REFERENCES "Locale"."Country"("CountryId")
 		ON DELETE NO ACTION
 		ON UPDATE NO ACTION
 go
 
 ALTER TABLE "Sales"."Customer"
-	ADD CONSTRAINT "FK_Customer_UserAuthorization" FOREIGN KEY ("UserAuthorizationId") REFERENCES "DbSecurity"."UserAuthorization"("UserAuthorizationId")
+	ADD CONSTRAINT "FK_Sales.Customer_DbSecurity.UserAuthorization" FOREIGN KEY ("UserAuthorizationId") REFERENCES "DbSecurity"."UserAuthorization"("UserAuthorizationId")
 		ON DELETE NO ACTION
 		ON UPDATE NO ACTION
 go
@@ -3337,13 +3353,13 @@ go
 
 ALTER TABLE "Audit"."HumanResourcesStaffHistory"
 	ADD CONSTRAINT "CK_Audit_HumanResourcesStaffHistory_DBAction"
-		CHECK  ( DBAction='U' OR DBAction='I' OR DBAction='D' ) 
+		CHECK  ( "DBAction"='U' OR "DBAction"='I' OR "DBAction"='D' ) 
 go
 
 
 ALTER TABLE "Audit"."LocaleCountryHistory"
 	ADD CONSTRAINT "CK_LocaleCountryHistory_DBAction"
-		CHECK  ( DBAction='U' OR DBAction='I' OR DBAction='D' ) 
+		CHECK  ( "DBAction"='U' OR "DBAction"='I' OR "DBAction"='D' ) 
 go
 
 
@@ -3359,18 +3375,18 @@ go
 
 ALTER TABLE "Production"."ManufacturerModel"
 	ADD CONSTRAINT "CK_Production_ManufacturerModel_FireAuditTrigger"
-		CHECK  ( FireAuditTrigger='Y' OR FireAuditTrigger='N' ) 
+		CHECK  ( "FireAuditTrigger"='Y' OR "FireAuditTrigger"='N' ) 
 go
 
 
 ALTER TABLE "Production"."ManufacturerModel"
-	ADD CONSTRAINT "FK_ManufacturerModel_ManufacturerVehicleMake" FOREIGN KEY ("ManufacturerVehicleMakeId") REFERENCES "Production"."ManufacturerVehicleMake"("ManufacturerVehicleMakeId")
+	ADD CONSTRAINT "FK_Production.ManufacturerModel_Production.ManufacturerVehicleMake" FOREIGN KEY ("ManufacturerVehicleMakeId") REFERENCES "Production"."ManufacturerVehicleMake"("ManufacturerVehicleMakeId")
 		ON DELETE NO ACTION
 		ON UPDATE NO ACTION
 go
 
 ALTER TABLE "Production"."ManufacturerModel"
-	ADD CONSTRAINT "FK_ManufacturerModel_UserAuthorization" FOREIGN KEY ("UserAuthorizationId") REFERENCES "DbSecurity"."UserAuthorization"("UserAuthorizationId")
+	ADD CONSTRAINT "FK_Production.ManufacturerModel_DbSecurity.UserAuthorization" FOREIGN KEY ("UserAuthorizationId") REFERENCES "DbSecurity"."UserAuthorization"("UserAuthorizationId")
 		ON DELETE NO ACTION
 		ON UPDATE NO ACTION
 go
@@ -3388,18 +3404,18 @@ go
 
 ALTER TABLE "Production"."ManufacturerVehicleMake"
 	ADD CONSTRAINT "CK_Production_ManufacturerVehicleMakel_FireAuditTrigger"
-		CHECK  ( FireAuditTrigger='Y' OR FireAuditTrigger='N' ) 
+		CHECK  ( "FireAuditTrigger"='Y' OR "FireAuditTrigger"='N' ) 
 go
 
 
 ALTER TABLE "Production"."ManufacturerVehicleMake"
-	ADD CONSTRAINT "FK_ManufacturerVehicleMake_Country" FOREIGN KEY ("CountryId") REFERENCES "Locale"."Country"("CountryId")
+	ADD CONSTRAINT "FK_Production.ManufacturerVehicleMake_Locale.Country" FOREIGN KEY ("CountryId") REFERENCES "Locale"."Country"("CountryId")
 		ON DELETE NO ACTION
 		ON UPDATE NO ACTION
 go
 
 ALTER TABLE "Production"."ManufacturerVehicleMake"
-	ADD CONSTRAINT "FK_ManufacturerVehicleMake_UserAuthorization" FOREIGN KEY ("UserAuthorizationId") REFERENCES "DbSecurity"."UserAuthorization"("UserAuthorizationId")
+	ADD CONSTRAINT "FK_Production.ManufacturerVehicleMake_DbSecurity.UserAuthorization" FOREIGN KEY ("UserAuthorizationId") REFERENCES "DbSecurity"."UserAuthorization"("UserAuthorizationId")
 		ON DELETE NO ACTION
 		ON UPDATE NO ACTION
 go
@@ -3407,27 +3423,27 @@ go
 
 ALTER TABLE "Production"."ManufacturerVehicleStock"
 	ADD CONSTRAINT "CK_Production_ManufacturerVehicleStock_Cost"
-		CHECK  ( Cost >= 0 ) 
+		CHECK  ( "Cost" >= 0 ) 
 go
 
 ALTER TABLE "Production"."ManufacturerVehicleStock"
 	ADD CONSTRAINT "CK_Production_ManufacturerVehicleStock_RepairsCharge"
-		CHECK  ( RepairsCharge >= 0 ) 
+		CHECK  ( "RepairsCharge" >= 0 ) 
 go
 
 ALTER TABLE "Production"."ManufacturerVehicleStock"
 	ADD CONSTRAINT "CK_Production_ManufacturerVehicleStock_PartsCharge"
-		CHECK  ( PartsCharge >= 0 ) 
+		CHECK  ( "PartsCharge" >= 0 ) 
 go
 
 ALTER TABLE "Production"."ManufacturerVehicleStock"
 	ADD CONSTRAINT "CK_Production_ManufacturerVehicleStock_DeliveryCharge"
-		CHECK  ( DeliveryCharge >= 0 ) 
+		CHECK  ( "DeliveryCharge" >= 0 ) 
 go
 
 ALTER TABLE "Production"."ManufacturerVehicleStock"
 	ADD CONSTRAINT "CK_Production_ManufacturerVehicleStock_IsPremiumRoadHandlingPackage"
-		CHECK  ( IsPremiumRoadHandlingPackage=0 OR IsPremiumRoadHandlingPackage=1 ) 
+		CHECK  ( "IsPremiumRoadHandlingPackage"=0 OR "IsPremiumRoadHandlingPackage"=1 ) 
 go
 
 ALTER TABLE "Production"."ManufacturerVehicleStock"
@@ -3442,12 +3458,12 @@ go
 
 ALTER TABLE "Production"."ManufacturerVehicleStock"
 	ADD CONSTRAINT "CK_Production_ManfuacturerVehicleStock_FireAuditTrigger"
-		CHECK  ( FireAuditTrigger='Y' OR FireAuditTrigger='N' ) 
+		CHECK  ( "FireAuditTrigger"='Y' OR "FireAuditTrigger"='N' ) 
 go
 
 
 ALTER TABLE "Production"."ManufacturerVehicleStock"
-	ADD CONSTRAINT "FK_ManufacturerVehicleStock_ManufacturerModel" FOREIGN KEY ("ModelId") REFERENCES "Production"."ManufacturerModel"("ManufacturerModelId")
+	ADD CONSTRAINT "FK_Production.ManufacturerVehicleStock_Production.ManufacturerModel" FOREIGN KEY ("ModelId") REFERENCES "Production"."ManufacturerModel"("ManufacturerModelId")
 		ON DELETE NO ACTION
 		ON UPDATE NO ACTION
 go
@@ -3461,19 +3477,19 @@ go
 
 ALTER TABLE "Audit"."ProductionManufacturerModelHistory"
 	ADD CONSTRAINT "CK_ProductionManufacturerVehicleModelHistory_DBAction"
-		CHECK  ( DBAction='U' OR DBAction='I' OR DBAction='D' ) 
+		CHECK  ( "DBAction"='U' OR "DBAction"='I' OR "DBAction"='D' ) 
 go
 
 
 ALTER TABLE "Audit"."ProductionManufacturerVehicleMakeHistory"
 	ADD CONSTRAINT "CK_Audit_ProductionManufacturerVehicleHistory_AuditDateTimeStamp"
-		CHECK  ( DBAction='U' OR DBAction='I' OR DBAction='D' ) 
+		CHECK  ( "DBAction"='U' OR "DBAction"='I' OR "DBAction"='D' ) 
 go
 
 
 ALTER TABLE "Audit"."ProductionManufacturerVehicleStockHistory"
 	ADD CONSTRAINT "CK_ProductionManufacturerVehicleStockHistory_DBAction"
-		CHECK  ( DBAction='U' OR DBAction='I' OR DBAction='D' ) 
+		CHECK  ( "DBAction"='U' OR "DBAction"='I' OR "DBAction"='D' ) 
 go
 
 
@@ -3489,7 +3505,7 @@ go
 
 
 ALTER TABLE "Sales"."SalesCategoryThreshold"
-	ADD CONSTRAINT "FK_SalesCategoryThreshold_UserAuthorization" FOREIGN KEY ("UserAuthorizationId") REFERENCES "DbSecurity"."UserAuthorization"("UserAuthorizationId")
+	ADD CONSTRAINT "FK_Sales.SalesCategoryThreshold_DbSecurity.UserAuthorization" FOREIGN KEY ("UserAuthorizationId") REFERENCES "DbSecurity"."UserAuthorization"("UserAuthorizationId")
 		ON DELETE NO ACTION
 		ON UPDATE NO ACTION
 go
@@ -3497,13 +3513,13 @@ go
 
 ALTER TABLE "Audit"."SalesCustomerHistory"
 	ADD CONSTRAINT "CK_Audit_SalesSalesCustomerHistory_DBAction"
-		CHECK  ( DBAction='U' OR DBAction='I' OR DBAction='D' ) 
+		CHECK  ( "DBAction"='U' OR "DBAction"='I' OR "DBAction"='D' ) 
 go
 
 
 ALTER TABLE "Sales"."SalesOrderVehicle"
 	ADD CONSTRAINT "CK_Sales_SalesOrderVehicle_TotalSalePrice"
-		CHECK  ( TotalSalePrice >= 0 ) 
+		CHECK  ( "TotalSalePrice" >= 0 ) 
 go
 
 ALTER TABLE "Sales"."SalesOrderVehicle"
@@ -3518,7 +3534,7 @@ go
 
 ALTER TABLE "Sales"."SalesOrderVehicle"
 	ADD CONSTRAINT "CK_Sales_SalesOrderVehicle_FireAuditTrigger"
-		CHECK  ( FireAuditTrigger='Y' OR FireAuditTrigger='N' ) 
+		CHECK  ( "FireAuditTrigger"='Y' OR "FireAuditTrigger"='N' ) 
 go
 
 
@@ -3529,7 +3545,7 @@ ALTER TABLE "Sales"."SalesOrderVehicle"
 go
 
 ALTER TABLE "Sales"."SalesOrderVehicle"
-	ADD CONSTRAINT "FK_SalesOrderVehicle_Staff" FOREIGN KEY ("StaffId") REFERENCES "HumanResources"."Staff"("StaffId")
+	ADD CONSTRAINT "FK_Sales.SalesOrderVehicle_HumanResources.Staff" FOREIGN KEY ("StaffId") REFERENCES "HumanResources"."Staff"("StaffId")
 		ON DELETE NO ACTION
 		ON UPDATE NO ACTION
 go
@@ -3541,7 +3557,7 @@ ALTER TABLE "Sales"."SalesOrderVehicle"
 go
 
 ALTER TABLE "Sales"."SalesOrderVehicle"
-	ADD CONSTRAINT "FK_SalesOrderVehicle_SalesCategoryThreshold" FOREIGN KEY ("SalesCategoryThresholdId") REFERENCES "Sales"."SalesCategoryThreshold"("SalesCategoryThresholdId")
+	ADD CONSTRAINT "FK_Sales.SalesOrderVehicle_Sales.SalesCategoryThreshold" FOREIGN KEY ("SalesCategoryThresholdId") REFERENCES "Sales"."SalesCategoryThreshold"("SalesCategoryThresholdId")
 		ON DELETE NO ACTION
 		ON UPDATE NO ACTION
 go
@@ -3549,12 +3565,12 @@ go
 
 ALTER TABLE "Sales"."SalesOrderVehicleDetail"
 	ADD CONSTRAINT "CK_Sales_SalesOrderVehicleDetail_SalePrice"
-		CHECK  ( SalePrice >= 0 ) 
+		CHECK  ( "SalePrice" >= 0 ) 
 go
 
 ALTER TABLE "Sales"."SalesOrderVehicleDetail"
 	ADD CONSTRAINT "CK_Sales_SalesOrderVehicleDetail_LineItemDiscount"
-		CHECK  ( LineItemDiscount >= 0 ) 
+		CHECK  ( "LineItemDiscount" >= 0 ) 
 go
 
 ALTER TABLE "Sales"."SalesOrderVehicleDetail"
@@ -3569,24 +3585,24 @@ go
 
 ALTER TABLE "Sales"."SalesOrderVehicleDetail"
 	ADD CONSTRAINT "CK_Sales_SalesOrderVehicleDetail_FireAuditTrigger"
-		CHECK  ( FireAuditTrigger='Y' OR FireAuditTrigger='N' ) 
+		CHECK  ( "FireAuditTrigger"='Y' OR "FireAuditTrigger"='N' ) 
 go
 
 
 ALTER TABLE "Sales"."SalesOrderVehicleDetail"
-	ADD CONSTRAINT "FK_SalesOrderVehicleDetail_SalesOrderVehicle" FOREIGN KEY ("SalesOrderVehicleId") REFERENCES "Sales"."SalesOrderVehicle"("SalesOrderVehicleId")
+	ADD CONSTRAINT "FK_Sales.SalesOrderVehicleDetail_Sales.SalesOrderVehicle" FOREIGN KEY ("SalesOrderVehicleId") REFERENCES "Sales"."SalesOrderVehicle"("SalesOrderVehicleId")
 		ON DELETE NO ACTION
 		ON UPDATE NO ACTION
 go
 
 ALTER TABLE "Sales"."SalesOrderVehicleDetail"
-	ADD CONSTRAINT "FK_SalesOrderVehicleDetail_ManufacturerVehicleStock" FOREIGN KEY ("ManufacturerVehicleStockId") REFERENCES "Production"."ManufacturerVehicleStock"("ManufacturerVehicleStockId")
+	ADD CONSTRAINT "FK_Sales.SalesOrderVehicleDetail_Production.ManufacturerVehicleStock" FOREIGN KEY ("ManufacturerVehicleStockId") REFERENCES "Production"."ManufacturerVehicleStock"("ManufacturerVehicleStockId")
 		ON DELETE NO ACTION
 		ON UPDATE NO ACTION
 go
 
 ALTER TABLE "Sales"."SalesOrderVehicleDetail"
-	ADD CONSTRAINT "FK_SalesOrderVehicleDetail_UserAuthorization" FOREIGN KEY ("UserAuthorizationId") REFERENCES "DbSecurity"."UserAuthorization"("UserAuthorizationId")
+	ADD CONSTRAINT "FK_Sales.SalesOrderVehicleDetail_DbSecurity.UserAuthorization" FOREIGN KEY ("UserAuthorizationId") REFERENCES "DbSecurity"."UserAuthorization"("UserAuthorizationId")
 		ON DELETE NO ACTION
 		ON UPDATE NO ACTION
 go
@@ -3594,13 +3610,13 @@ go
 
 ALTER TABLE "Audit"."SalesSalesOrderVehicleDetailHistory"
 	ADD CONSTRAINT "CK_SalesSalesOrderVehicleDetailHistory_DBAction"
-		CHECK  ( DBAction='U' OR DBAction='I' OR DBAction='D' ) 
+		CHECK  ( "DBAction"='U' OR "DBAction"='I' OR "DBAction"='D' ) 
 go
 
 
 ALTER TABLE "Audit"."SalesSalesOrderVehicleHistory"
 	ADD CONSTRAINT "CK_SalesSalesOrderVehicleHistory_DBAction"
-		CHECK  ( DBAction='U' OR DBAction='I' OR DBAction='D' ) 
+		CHECK  ( "DBAction"='U' OR "DBAction"='I' OR "DBAction"='D' ) 
 go
 
 
@@ -3611,18 +3627,18 @@ go
 
 ALTER TABLE "HumanResources"."Staff"
 	ADD CONSTRAINT "CK_HumanResources_Staff_FireAuditTrigger"
-		CHECK  ( FireAuditTrigger='Y' OR FireAuditTrigger='N' ) 
+		CHECK  ( "FireAuditTrigger"='Y' OR "FireAuditTrigger"='N' ) 
 go
 
 
 ALTER TABLE "HumanResources"."Staff"
-	ADD CONSTRAINT "FK_Staff_Staff" FOREIGN KEY ("ManagerId") REFERENCES "HumanResources"."Staff"("StaffId")
+	ADD CONSTRAINT "FK_HumanResources.Staff_HumanResources.Staff" FOREIGN KEY ("ManagerId") REFERENCES "HumanResources"."Staff"("StaffId")
 		ON DELETE NO ACTION
 		ON UPDATE NO ACTION
 go
 
 ALTER TABLE "HumanResources"."Staff"
-	ADD CONSTRAINT "FK_Staff_UserAuthorization" FOREIGN KEY ("UserAuthorizationId") REFERENCES "DbSecurity"."UserAuthorization"("UserAuthorizationId")
+	ADD CONSTRAINT "FK_HumanResources.Staff_DbSecurity.UserAuthorization" FOREIGN KEY ("UserAuthorizationId") REFERENCES "DbSecurity"."UserAuthorization"("UserAuthorizationId")
 		ON DELETE NO ACTION
 		ON UPDATE NO ACTION
 go
@@ -3630,9 +3646,9 @@ go
 
 ALTER TABLE "DbSecurity"."UserAuthorization"
 	ADD CONSTRAINT "CK_DbSecurity_UserAuthorization_ClassTime"
-		CHECK  ( ClassTime LIKE '[0-1][0-9]:[0-5][0-9]'
+		CHECK  ( "ClassTime" LIKE '[0-1][0-9]:[0-5][0-9]'
 OR
-ClassTime LIKE '[0-2][0-4]:[0-5][0-9]' ) 
+"ClassTime" LIKE '[0-2][0-4]:[0-5][0-9]' ) 
 go
 
 ALTER TABLE "DbSecurity"."UserAuthorization"
@@ -3746,10 +3762,10 @@ BEGIN
            @errmsg  varchar(255)
     /* erwin Builtin Trigger */
     /* Locale.Country is the country location of Production.ManufacturerVehicleMake on parent delete no action */
-    /* ERWIN_RELATION:CHECKSUM="00043def", PARENT_OWNER="Locale", PARENT_TABLE="Country"
+    /* ERWIN_RELATION:CHECKSUM="00045788", PARENT_OWNER="Locale", PARENT_TABLE="Country"
     CHILD_OWNER="Production", CHILD_TABLE="ManufacturerVehicleMake"
     P2C_VERB_PHRASE="is the country location of", C2P_VERB_PHRASE="is located in", 
-    FK_CONSTRAINT="FK_ManufacturerVehicleMake_Country", FK_COLUMNS="CountryId" */
+    FK_CONSTRAINT="FK_Production.ManufacturerVehicleMake_Locale.Country", FK_COLUMNS="CountryId" */
     IF EXISTS (
       SELECT * FROM deleted,Production.ManufacturerVehicleMake
       WHERE
@@ -3767,7 +3783,7 @@ BEGIN
     /* ERWIN_RELATION:CHECKSUM="00000000", PARENT_OWNER="Locale", PARENT_TABLE="Country"
     CHILD_OWNER="Sales", CHILD_TABLE="Customer"
     P2C_VERB_PHRASE="is the country location of", C2P_VERB_PHRASE="is located in", 
-    FK_CONSTRAINT="FK_Customer_Country", FK_COLUMNS="CountryId" */
+    FK_CONSTRAINT="FK_Sales.Customer_Locale.Country", FK_COLUMNS="CountryId" */
     IF EXISTS (
       SELECT * FROM deleted,Sales.Customer
       WHERE
@@ -3785,7 +3801,7 @@ BEGIN
     /* ERWIN_RELATION:CHECKSUM="00000000", PARENT_OWNER="DbSecurity", PARENT_TABLE="UserAuthorization"
     CHILD_OWNER="Locale", CHILD_TABLE="Country"
     P2C_VERB_PHRASE="authorizes", C2P_VERB_PHRASE="is authorized by", 
-    FK_CONSTRAINT="FK_Country_UserAuthorization", FK_COLUMNS="UserAuthorizationId" */
+    FK_CONSTRAINT="FK_Locale.Country_DbSecurity.UserAuthorization", FK_COLUMNS="UserAuthorizationId" */
     IF EXISTS (SELECT * FROM deleted,DbSecurity.UserAuthorization
       WHERE
         /* %JoinFKPK(deleted,DbSecurity.UserAuthorization," = "," AND") */
@@ -3834,10 +3850,10 @@ BEGIN
   SELECT @numrows = @@rowcount
   /* erwin Builtin Trigger */
   /* Locale.Country is the country location of Production.ManufacturerVehicleMake on parent update no action */
-  /* ERWIN_RELATION:CHECKSUM="00048ed2", PARENT_OWNER="Locale", PARENT_TABLE="Country"
+  /* ERWIN_RELATION:CHECKSUM="0004a694", PARENT_OWNER="Locale", PARENT_TABLE="Country"
     CHILD_OWNER="Production", CHILD_TABLE="ManufacturerVehicleMake"
     P2C_VERB_PHRASE="is the country location of", C2P_VERB_PHRASE="is located in", 
-    FK_CONSTRAINT="FK_ManufacturerVehicleMake_Country", FK_COLUMNS="CountryId" */
+    FK_CONSTRAINT="FK_Production.ManufacturerVehicleMake_Locale.Country", FK_COLUMNS="CountryId" */
   IF
     /* %ParentPK(" OR",UPDATE) */
     UPDATE(CountryId)
@@ -3860,7 +3876,7 @@ BEGIN
   /* ERWIN_RELATION:CHECKSUM="00000000", PARENT_OWNER="Locale", PARENT_TABLE="Country"
     CHILD_OWNER="Sales", CHILD_TABLE="Customer"
     P2C_VERB_PHRASE="is the country location of", C2P_VERB_PHRASE="is located in", 
-    FK_CONSTRAINT="FK_Customer_Country", FK_COLUMNS="CountryId" */
+    FK_CONSTRAINT="FK_Sales.Customer_Locale.Country", FK_COLUMNS="CountryId" */
   IF
     /* %ParentPK(" OR",UPDATE) */
     UPDATE(CountryId)
@@ -3883,7 +3899,7 @@ BEGIN
   /* ERWIN_RELATION:CHECKSUM="00000000", PARENT_OWNER="DbSecurity", PARENT_TABLE="UserAuthorization"
     CHILD_OWNER="Locale", CHILD_TABLE="Country"
     P2C_VERB_PHRASE="authorizes", C2P_VERB_PHRASE="is authorized by", 
-    FK_CONSTRAINT="FK_Country_UserAuthorization", FK_COLUMNS="UserAuthorizationId" */
+    FK_CONSTRAINT="FK_Locale.Country_DbSecurity.UserAuthorization", FK_COLUMNS="UserAuthorizationId" */
   IF
     /* %ChildFK(" OR",UPDATE) */
     UPDATE(UserAuthorizationId)
@@ -3930,7 +3946,7 @@ BEGIN
            @errmsg  varchar(255)
     /* erwin Builtin Trigger */
     /* Sales.Customer purchases Sales.SalesOrderVehicle on parent delete no action */
-    /* ERWIN_RELATION:CHECKSUM="00047fce", PARENT_OWNER="Sales", PARENT_TABLE="Customer"
+    /* ERWIN_RELATION:CHECKSUM="00049316", PARENT_OWNER="Sales", PARENT_TABLE="Customer"
     CHILD_OWNER="Sales", CHILD_TABLE="SalesOrderVehicle"
     P2C_VERB_PHRASE="purchases", C2P_VERB_PHRASE="is purchased by", 
     FK_CONSTRAINT="FK_Sales.SalesOrderVehicle_Sales.Customer", FK_COLUMNS="CustomerId" */
@@ -3951,7 +3967,7 @@ BEGIN
     /* ERWIN_RELATION:CHECKSUM="00000000", PARENT_OWNER="DbSecurity", PARENT_TABLE="UserAuthorization"
     CHILD_OWNER="Sales", CHILD_TABLE="Customer"
     P2C_VERB_PHRASE="authorizes", C2P_VERB_PHRASE="is authorized by", 
-    FK_CONSTRAINT="FK_Customer_UserAuthorization", FK_COLUMNS="UserAuthorizationId" */
+    FK_CONSTRAINT="FK_Sales.Customer_DbSecurity.UserAuthorization", FK_COLUMNS="UserAuthorizationId" */
     IF EXISTS (SELECT * FROM deleted,DbSecurity.UserAuthorization
       WHERE
         /* %JoinFKPK(deleted,DbSecurity.UserAuthorization," = "," AND") */
@@ -3974,7 +3990,7 @@ BEGIN
     /* ERWIN_RELATION:CHECKSUM="00000000", PARENT_OWNER="Locale", PARENT_TABLE="Country"
     CHILD_OWNER="Sales", CHILD_TABLE="Customer"
     P2C_VERB_PHRASE="is the country location of", C2P_VERB_PHRASE="is located in", 
-    FK_CONSTRAINT="FK_Customer_Country", FK_COLUMNS="CountryId" */
+    FK_CONSTRAINT="FK_Sales.Customer_Locale.Country", FK_COLUMNS="CountryId" */
     IF EXISTS (SELECT * FROM deleted,Locale.Country
       WHERE
         /* %JoinFKPK(deleted,Locale.Country," = "," AND") */
@@ -4023,7 +4039,7 @@ BEGIN
   SELECT @numrows = @@rowcount
   /* erwin Builtin Trigger */
   /* Sales.Customer purchases Sales.SalesOrderVehicle on parent update no action */
-  /* ERWIN_RELATION:CHECKSUM="0004d7f0", PARENT_OWNER="Sales", PARENT_TABLE="Customer"
+  /* ERWIN_RELATION:CHECKSUM="0004fc72", PARENT_OWNER="Sales", PARENT_TABLE="Customer"
     CHILD_OWNER="Sales", CHILD_TABLE="SalesOrderVehicle"
     P2C_VERB_PHRASE="purchases", C2P_VERB_PHRASE="is purchased by", 
     FK_CONSTRAINT="FK_Sales.SalesOrderVehicle_Sales.Customer", FK_COLUMNS="CustomerId" */
@@ -4049,7 +4065,7 @@ BEGIN
   /* ERWIN_RELATION:CHECKSUM="00000000", PARENT_OWNER="DbSecurity", PARENT_TABLE="UserAuthorization"
     CHILD_OWNER="Sales", CHILD_TABLE="Customer"
     P2C_VERB_PHRASE="authorizes", C2P_VERB_PHRASE="is authorized by", 
-    FK_CONSTRAINT="FK_Customer_UserAuthorization", FK_COLUMNS="UserAuthorizationId" */
+    FK_CONSTRAINT="FK_Sales.Customer_DbSecurity.UserAuthorization", FK_COLUMNS="UserAuthorizationId" */
   IF
     /* %ChildFK(" OR",UPDATE) */
     UPDATE(UserAuthorizationId)
@@ -4076,7 +4092,7 @@ BEGIN
   /* ERWIN_RELATION:CHECKSUM="00000000", PARENT_OWNER="Locale", PARENT_TABLE="Country"
     CHILD_OWNER="Sales", CHILD_TABLE="Customer"
     P2C_VERB_PHRASE="is the country location of", C2P_VERB_PHRASE="is located in", 
-    FK_CONSTRAINT="FK_Customer_Country", FK_COLUMNS="CountryId" */
+    FK_CONSTRAINT="FK_Sales.Customer_Locale.Country", FK_COLUMNS="CountryId" */
   IF
     /* %ChildFK(" OR",UPDATE) */
     UPDATE(CountryId)
@@ -4123,10 +4139,10 @@ BEGIN
            @errmsg  varchar(255)
     /* erwin Builtin Trigger */
     /* Production.ManufacturerModel describes Production.ManufacturerVehicleStock on parent delete no action */
-    /* ERWIN_RELATION:CHECKSUM="0005784b", PARENT_OWNER="Production", PARENT_TABLE="ManufacturerModel"
+    /* ERWIN_RELATION:CHECKSUM="0005c528", PARENT_OWNER="Production", PARENT_TABLE="ManufacturerModel"
     CHILD_OWNER="Production", CHILD_TABLE="ManufacturerVehicleStock"
     P2C_VERB_PHRASE="describes", C2P_VERB_PHRASE="is described by", 
-    FK_CONSTRAINT="FK_ManufacturerVehicleStock_ManufacturerModel", FK_COLUMNS="ModelId" */
+    FK_CONSTRAINT="FK_Production.ManufacturerVehicleStock_Production.ManufacturerModel", FK_COLUMNS="ModelId" */
     IF EXISTS (
       SELECT * FROM deleted,Production.ManufacturerVehicleStock
       WHERE
@@ -4144,7 +4160,7 @@ BEGIN
     /* ERWIN_RELATION:CHECKSUM="00000000", PARENT_OWNER="DbSecurity", PARENT_TABLE="UserAuthorization"
     CHILD_OWNER="Production", CHILD_TABLE="ManufacturerModel"
     P2C_VERB_PHRASE="authorizes", C2P_VERB_PHRASE="is authorized by", 
-    FK_CONSTRAINT="FK_ManufacturerModel_UserAuthorization", FK_COLUMNS="UserAuthorizationId" */
+    FK_CONSTRAINT="FK_Production.ManufacturerModel_DbSecurity.UserAuthorization", FK_COLUMNS="UserAuthorizationId" */
     IF EXISTS (SELECT * FROM deleted,DbSecurity.UserAuthorization
       WHERE
         /* %JoinFKPK(deleted,DbSecurity.UserAuthorization," = "," AND") */
@@ -4167,7 +4183,7 @@ BEGIN
     /* ERWIN_RELATION:CHECKSUM="00000000", PARENT_OWNER="Production", PARENT_TABLE="ManufacturerVehicleMake"
     CHILD_OWNER="Production", CHILD_TABLE="ManufacturerModel"
     P2C_VERB_PHRASE="is the maker of", C2P_VERB_PHRASE="is made by", 
-    FK_CONSTRAINT="FK_ManufacturerModel_ManufacturerVehicleMake", FK_COLUMNS="ManufacturerVehicleMakeId" */
+    FK_CONSTRAINT="FK_Production.ManufacturerModel_Production.ManufacturerVehicleMake", FK_COLUMNS="ManufacturerVehicleMakeId" */
     IF EXISTS (SELECT * FROM deleted,Production.ManufacturerVehicleMake
       WHERE
         /* %JoinFKPK(deleted,Production.ManufacturerVehicleMake," = "," AND") */
@@ -4216,10 +4232,10 @@ BEGIN
   SELECT @numrows = @@rowcount
   /* erwin Builtin Trigger */
   /* Production.ManufacturerModel describes Production.ManufacturerVehicleStock on parent update no action */
-  /* ERWIN_RELATION:CHECKSUM="0005bfcf", PARENT_OWNER="Production", PARENT_TABLE="ManufacturerModel"
+  /* ERWIN_RELATION:CHECKSUM="0005e2aa", PARENT_OWNER="Production", PARENT_TABLE="ManufacturerModel"
     CHILD_OWNER="Production", CHILD_TABLE="ManufacturerVehicleStock"
     P2C_VERB_PHRASE="describes", C2P_VERB_PHRASE="is described by", 
-    FK_CONSTRAINT="FK_ManufacturerVehicleStock_ManufacturerModel", FK_COLUMNS="ModelId" */
+    FK_CONSTRAINT="FK_Production.ManufacturerVehicleStock_Production.ManufacturerModel", FK_COLUMNS="ModelId" */
   IF
     /* %ParentPK(" OR",UPDATE) */
     UPDATE(ManufacturerModelId)
@@ -4242,7 +4258,7 @@ BEGIN
   /* ERWIN_RELATION:CHECKSUM="00000000", PARENT_OWNER="DbSecurity", PARENT_TABLE="UserAuthorization"
     CHILD_OWNER="Production", CHILD_TABLE="ManufacturerModel"
     P2C_VERB_PHRASE="authorizes", C2P_VERB_PHRASE="is authorized by", 
-    FK_CONSTRAINT="FK_ManufacturerModel_UserAuthorization", FK_COLUMNS="UserAuthorizationId" */
+    FK_CONSTRAINT="FK_Production.ManufacturerModel_DbSecurity.UserAuthorization", FK_COLUMNS="UserAuthorizationId" */
   IF
     /* %ChildFK(" OR",UPDATE) */
     UPDATE(UserAuthorizationId)
@@ -4269,7 +4285,7 @@ BEGIN
   /* ERWIN_RELATION:CHECKSUM="00000000", PARENT_OWNER="Production", PARENT_TABLE="ManufacturerVehicleMake"
     CHILD_OWNER="Production", CHILD_TABLE="ManufacturerModel"
     P2C_VERB_PHRASE="is the maker of", C2P_VERB_PHRASE="is made by", 
-    FK_CONSTRAINT="FK_ManufacturerModel_ManufacturerVehicleMake", FK_COLUMNS="ManufacturerVehicleMakeId" */
+    FK_CONSTRAINT="FK_Production.ManufacturerModel_Production.ManufacturerVehicleMake", FK_COLUMNS="ManufacturerVehicleMakeId" */
   IF
     /* %ChildFK(" OR",UPDATE) */
     UPDATE(ManufacturerVehicleMakeId)
@@ -4316,10 +4332,10 @@ BEGIN
            @errmsg  varchar(255)
     /* erwin Builtin Trigger */
     /* Production.ManufacturerVehicleMake is the maker of Production.ManufacturerModel on parent delete no action */
-    /* ERWIN_RELATION:CHECKSUM="00053c02", PARENT_OWNER="Production", PARENT_TABLE="ManufacturerVehicleMake"
+    /* ERWIN_RELATION:CHECKSUM="00055c34", PARENT_OWNER="Production", PARENT_TABLE="ManufacturerVehicleMake"
     CHILD_OWNER="Production", CHILD_TABLE="ManufacturerModel"
     P2C_VERB_PHRASE="is the maker of", C2P_VERB_PHRASE="is made by", 
-    FK_CONSTRAINT="FK_ManufacturerModel_ManufacturerVehicleMake", FK_COLUMNS="ManufacturerVehicleMakeId" */
+    FK_CONSTRAINT="FK_Production.ManufacturerModel_Production.ManufacturerVehicleMake", FK_COLUMNS="ManufacturerVehicleMakeId" */
     IF EXISTS (
       SELECT * FROM deleted,Production.ManufacturerModel
       WHERE
@@ -4337,7 +4353,7 @@ BEGIN
     /* ERWIN_RELATION:CHECKSUM="00000000", PARENT_OWNER="DbSecurity", PARENT_TABLE="UserAuthorization"
     CHILD_OWNER="Production", CHILD_TABLE="ManufacturerVehicleMake"
     P2C_VERB_PHRASE="authorizes", C2P_VERB_PHRASE="is authorized by", 
-    FK_CONSTRAINT="FK_ManufacturerVehicleMake_UserAuthorization", FK_COLUMNS="UserAuthorizationId" */
+    FK_CONSTRAINT="FK_Production.ManufacturerVehicleMake_DbSecurity.UserAuthorization", FK_COLUMNS="UserAuthorizationId" */
     IF EXISTS (SELECT * FROM deleted,DbSecurity.UserAuthorization
       WHERE
         /* %JoinFKPK(deleted,DbSecurity.UserAuthorization," = "," AND") */
@@ -4360,7 +4376,7 @@ BEGIN
     /* ERWIN_RELATION:CHECKSUM="00000000", PARENT_OWNER="Locale", PARENT_TABLE="Country"
     CHILD_OWNER="Production", CHILD_TABLE="ManufacturerVehicleMake"
     P2C_VERB_PHRASE="is the country location of", C2P_VERB_PHRASE="is located in", 
-    FK_CONSTRAINT="FK_ManufacturerVehicleMake_Country", FK_COLUMNS="CountryId" */
+    FK_CONSTRAINT="FK_Production.ManufacturerVehicleMake_Locale.Country", FK_COLUMNS="CountryId" */
     IF EXISTS (SELECT * FROM deleted,Locale.Country
       WHERE
         /* %JoinFKPK(deleted,Locale.Country," = "," AND") */
@@ -4409,10 +4425,10 @@ BEGIN
   SELECT @numrows = @@rowcount
   /* erwin Builtin Trigger */
   /* Production.ManufacturerVehicleMake is the maker of Production.ManufacturerModel on parent update no action */
-  /* ERWIN_RELATION:CHECKSUM="00057ff3", PARENT_OWNER="Production", PARENT_TABLE="ManufacturerVehicleMake"
+  /* ERWIN_RELATION:CHECKSUM="0005a2e2", PARENT_OWNER="Production", PARENT_TABLE="ManufacturerVehicleMake"
     CHILD_OWNER="Production", CHILD_TABLE="ManufacturerModel"
     P2C_VERB_PHRASE="is the maker of", C2P_VERB_PHRASE="is made by", 
-    FK_CONSTRAINT="FK_ManufacturerModel_ManufacturerVehicleMake", FK_COLUMNS="ManufacturerVehicleMakeId" */
+    FK_CONSTRAINT="FK_Production.ManufacturerModel_Production.ManufacturerVehicleMake", FK_COLUMNS="ManufacturerVehicleMakeId" */
   IF
     /* %ParentPK(" OR",UPDATE) */
     UPDATE(ManufacturerVehicleMakeId)
@@ -4435,7 +4451,7 @@ BEGIN
   /* ERWIN_RELATION:CHECKSUM="00000000", PARENT_OWNER="DbSecurity", PARENT_TABLE="UserAuthorization"
     CHILD_OWNER="Production", CHILD_TABLE="ManufacturerVehicleMake"
     P2C_VERB_PHRASE="authorizes", C2P_VERB_PHRASE="is authorized by", 
-    FK_CONSTRAINT="FK_ManufacturerVehicleMake_UserAuthorization", FK_COLUMNS="UserAuthorizationId" */
+    FK_CONSTRAINT="FK_Production.ManufacturerVehicleMake_DbSecurity.UserAuthorization", FK_COLUMNS="UserAuthorizationId" */
   IF
     /* %ChildFK(" OR",UPDATE) */
     UPDATE(UserAuthorizationId)
@@ -4462,7 +4478,7 @@ BEGIN
   /* ERWIN_RELATION:CHECKSUM="00000000", PARENT_OWNER="Locale", PARENT_TABLE="Country"
     CHILD_OWNER="Production", CHILD_TABLE="ManufacturerVehicleMake"
     P2C_VERB_PHRASE="is the country location of", C2P_VERB_PHRASE="is located in", 
-    FK_CONSTRAINT="FK_ManufacturerVehicleMake_Country", FK_COLUMNS="CountryId" */
+    FK_CONSTRAINT="FK_Production.ManufacturerVehicleMake_Locale.Country", FK_COLUMNS="CountryId" */
   IF
     /* %ChildFK(" OR",UPDATE) */
     UPDATE(CountryId)
@@ -4509,10 +4525,10 @@ BEGIN
            @errmsg  varchar(255)
     /* erwin Builtin Trigger */
     /* Production.ManufacturerVehicleStock is the specific vehicle listed in Sales.SalesOrderVehicleDetail on parent delete no action */
-    /* ERWIN_RELATION:CHECKSUM="0005a850", PARENT_OWNER="Production", PARENT_TABLE="ManufacturerVehicleStock"
+    /* ERWIN_RELATION:CHECKSUM="0005a085", PARENT_OWNER="Production", PARENT_TABLE="ManufacturerVehicleStock"
     CHILD_OWNER="Sales", CHILD_TABLE="SalesOrderVehicleDetail"
     P2C_VERB_PHRASE="is the specific vehicle listed in", C2P_VERB_PHRASE="contains the specific vehicle", 
-    FK_CONSTRAINT="FK_SalesOrderVehicleDetail_ManufacturerVehicleStock", FK_COLUMNS="ManufacturerVehicleStockId" */
+    FK_CONSTRAINT="FK_Sales.SalesOrderVehicleDetail_Production.ManufacturerVehicleStock", FK_COLUMNS="ManufacturerVehicleStockId" */
     IF EXISTS (
       SELECT * FROM deleted,Sales.SalesOrderVehicleDetail
       WHERE
@@ -4553,7 +4569,7 @@ BEGIN
     /* ERWIN_RELATION:CHECKSUM="00000000", PARENT_OWNER="Production", PARENT_TABLE="ManufacturerModel"
     CHILD_OWNER="Production", CHILD_TABLE="ManufacturerVehicleStock"
     P2C_VERB_PHRASE="describes", C2P_VERB_PHRASE="is described by", 
-    FK_CONSTRAINT="FK_ManufacturerVehicleStock_ManufacturerModel", FK_COLUMNS="ModelId" */
+    FK_CONSTRAINT="FK_Production.ManufacturerVehicleStock_Production.ManufacturerModel", FK_COLUMNS="ModelId" */
     IF EXISTS (SELECT * FROM deleted,Production.ManufacturerModel
       WHERE
         /* %JoinFKPK(deleted,Production.ManufacturerModel," = "," AND") */
@@ -4602,10 +4618,10 @@ BEGIN
   SELECT @numrows = @@rowcount
   /* erwin Builtin Trigger */
   /* Production.ManufacturerVehicleStock is the specific vehicle listed in Sales.SalesOrderVehicleDetail on parent update no action */
-  /* ERWIN_RELATION:CHECKSUM="0005beb5", PARENT_OWNER="Production", PARENT_TABLE="ManufacturerVehicleStock"
+  /* ERWIN_RELATION:CHECKSUM="0005d35b", PARENT_OWNER="Production", PARENT_TABLE="ManufacturerVehicleStock"
     CHILD_OWNER="Sales", CHILD_TABLE="SalesOrderVehicleDetail"
     P2C_VERB_PHRASE="is the specific vehicle listed in", C2P_VERB_PHRASE="contains the specific vehicle", 
-    FK_CONSTRAINT="FK_SalesOrderVehicleDetail_ManufacturerVehicleStock", FK_COLUMNS="ManufacturerVehicleStockId" */
+    FK_CONSTRAINT="FK_Sales.SalesOrderVehicleDetail_Production.ManufacturerVehicleStock", FK_COLUMNS="ManufacturerVehicleStockId" */
   IF
     /* %ParentPK(" OR",UPDATE) */
     UPDATE(ManufacturerVehicleStockId)
@@ -4655,7 +4671,7 @@ BEGIN
   /* ERWIN_RELATION:CHECKSUM="00000000", PARENT_OWNER="Production", PARENT_TABLE="ManufacturerModel"
     CHILD_OWNER="Production", CHILD_TABLE="ManufacturerVehicleStock"
     P2C_VERB_PHRASE="describes", C2P_VERB_PHRASE="is described by", 
-    FK_CONSTRAINT="FK_ManufacturerVehicleStock_ManufacturerModel", FK_COLUMNS="ModelId" */
+    FK_CONSTRAINT="FK_Production.ManufacturerVehicleStock_Production.ManufacturerModel", FK_COLUMNS="ModelId" */
   IF
     /* %ChildFK(" OR",UPDATE) */
     UPDATE(ModelId)
@@ -4702,10 +4718,10 @@ BEGIN
            @errmsg  varchar(255)
     /* erwin Builtin Trigger */
     /* Sales.SalesOrderVehicle is described by Sales.SalesOrderVehicleDetail on parent delete no action */
-    /* ERWIN_RELATION:CHECKSUM="0008acb7", PARENT_OWNER="Sales", PARENT_TABLE="SalesOrderVehicle"
+    /* ERWIN_RELATION:CHECKSUM="0008b0bd", PARENT_OWNER="Sales", PARENT_TABLE="SalesOrderVehicle"
     CHILD_OWNER="Sales", CHILD_TABLE="SalesOrderVehicleDetail"
     P2C_VERB_PHRASE="is described by", C2P_VERB_PHRASE="describes", 
-    FK_CONSTRAINT="FK_SalesOrderVehicleDetail_SalesOrderVehicle", FK_COLUMNS="SalesOrderVehicleId" */
+    FK_CONSTRAINT="FK_Sales.SalesOrderVehicleDetail_Sales.SalesOrderVehicle", FK_COLUMNS="SalesOrderVehicleId" */
     IF EXISTS (
       SELECT * FROM deleted,Sales.SalesOrderVehicleDetail
       WHERE
@@ -4723,7 +4739,7 @@ BEGIN
     /* ERWIN_RELATION:CHECKSUM="00000000", PARENT_OWNER="Sales", PARENT_TABLE="SalesCategoryThreshold"
     CHILD_OWNER="Sales", CHILD_TABLE="SalesOrderVehicle"
     P2C_VERB_PHRASE="is a description of the sale price bounds for", C2P_VERB_PHRASE="should fall within the price bounds of", 
-    FK_CONSTRAINT="FK_SalesOrderVehicle_SalesCategoryThreshold", FK_COLUMNS="SalesCategoryThresholdId" */
+    FK_CONSTRAINT="FK_Sales.SalesOrderVehicle_Sales.SalesCategoryThreshold", FK_COLUMNS="SalesCategoryThresholdId" */
     IF EXISTS (SELECT * FROM deleted,Sales.SalesCategoryThreshold
       WHERE
         /* %JoinFKPK(deleted,Sales.SalesCategoryThreshold," = "," AND") */
@@ -4769,7 +4785,7 @@ BEGIN
     /* ERWIN_RELATION:CHECKSUM="00000000", PARENT_OWNER="HumanResources", PARENT_TABLE="Staff"
     CHILD_OWNER="Sales", CHILD_TABLE="SalesOrderVehicle"
     P2C_VERB_PHRASE="handles the sale of", C2P_VERB_PHRASE="is sold by", 
-    FK_CONSTRAINT="FK_SalesOrderVehicle_Staff", FK_COLUMNS="StaffId" */
+    FK_CONSTRAINT="FK_Sales.SalesOrderVehicle_HumanResources.Staff", FK_COLUMNS="StaffId" */
     IF EXISTS (SELECT * FROM deleted,HumanResources.Staff
       WHERE
         /* %JoinFKPK(deleted,HumanResources.Staff," = "," AND") */
@@ -4841,10 +4857,10 @@ BEGIN
   SELECT @numrows = @@rowcount
   /* erwin Builtin Trigger */
   /* Sales.SalesOrderVehicle is described by Sales.SalesOrderVehicleDetail on parent update no action */
-  /* ERWIN_RELATION:CHECKSUM="00092ff8", PARENT_OWNER="Sales", PARENT_TABLE="SalesOrderVehicle"
+  /* ERWIN_RELATION:CHECKSUM="000927fe", PARENT_OWNER="Sales", PARENT_TABLE="SalesOrderVehicle"
     CHILD_OWNER="Sales", CHILD_TABLE="SalesOrderVehicleDetail"
     P2C_VERB_PHRASE="is described by", C2P_VERB_PHRASE="describes", 
-    FK_CONSTRAINT="FK_SalesOrderVehicleDetail_SalesOrderVehicle", FK_COLUMNS="SalesOrderVehicleId" */
+    FK_CONSTRAINT="FK_Sales.SalesOrderVehicleDetail_Sales.SalesOrderVehicle", FK_COLUMNS="SalesOrderVehicleId" */
   IF
     /* %ParentPK(" OR",UPDATE) */
     UPDATE(SalesOrderVehicleId)
@@ -4867,7 +4883,7 @@ BEGIN
   /* ERWIN_RELATION:CHECKSUM="00000000", PARENT_OWNER="Sales", PARENT_TABLE="SalesCategoryThreshold"
     CHILD_OWNER="Sales", CHILD_TABLE="SalesOrderVehicle"
     P2C_VERB_PHRASE="is a description of the sale price bounds for", C2P_VERB_PHRASE="should fall within the price bounds of", 
-    FK_CONSTRAINT="FK_SalesOrderVehicle_SalesCategoryThreshold", FK_COLUMNS="SalesCategoryThresholdId" */
+    FK_CONSTRAINT="FK_Sales.SalesOrderVehicle_Sales.SalesCategoryThreshold", FK_COLUMNS="SalesCategoryThresholdId" */
   IF
     /* %ChildFK(" OR",UPDATE) */
     UPDATE(SalesCategoryThresholdId)
@@ -4921,7 +4937,7 @@ BEGIN
   /* ERWIN_RELATION:CHECKSUM="00000000", PARENT_OWNER="HumanResources", PARENT_TABLE="Staff"
     CHILD_OWNER="Sales", CHILD_TABLE="SalesOrderVehicle"
     P2C_VERB_PHRASE="handles the sale of", C2P_VERB_PHRASE="is sold by", 
-    FK_CONSTRAINT="FK_SalesOrderVehicle_Staff", FK_COLUMNS="StaffId" */
+    FK_CONSTRAINT="FK_Sales.SalesOrderVehicle_HumanResources.Staff", FK_COLUMNS="StaffId" */
   IF
     /* %ChildFK(" OR",UPDATE) */
     UPDATE(StaffId)
@@ -4995,10 +5011,10 @@ BEGIN
            @errmsg  varchar(255)
     /* erwin Builtin Trigger */
     /* DbSecurity.UserAuthorization authorizes Sales.SalesOrderVehicleDetail on child delete no action */
-    /* ERWIN_RELATION:CHECKSUM="00061232", PARENT_OWNER="DbSecurity", PARENT_TABLE="UserAuthorization"
+    /* ERWIN_RELATION:CHECKSUM="00061dd3", PARENT_OWNER="DbSecurity", PARENT_TABLE="UserAuthorization"
     CHILD_OWNER="Sales", CHILD_TABLE="SalesOrderVehicleDetail"
     P2C_VERB_PHRASE="authorizes", C2P_VERB_PHRASE="is authorized by", 
-    FK_CONSTRAINT="FK_SalesOrderVehicleDetail_UserAuthorization", FK_COLUMNS="UserAuthorizationId" */
+    FK_CONSTRAINT="FK_Sales.SalesOrderVehicleDetail_DbSecurity.UserAuthorization", FK_COLUMNS="UserAuthorizationId" */
     IF EXISTS (SELECT * FROM deleted,DbSecurity.UserAuthorization
       WHERE
         /* %JoinFKPK(deleted,DbSecurity.UserAuthorization," = "," AND") */
@@ -5021,7 +5037,7 @@ BEGIN
     /* ERWIN_RELATION:CHECKSUM="00000000", PARENT_OWNER="Production", PARENT_TABLE="ManufacturerVehicleStock"
     CHILD_OWNER="Sales", CHILD_TABLE="SalesOrderVehicleDetail"
     P2C_VERB_PHRASE="is the specific vehicle listed in", C2P_VERB_PHRASE="contains the specific vehicle", 
-    FK_CONSTRAINT="FK_SalesOrderVehicleDetail_ManufacturerVehicleStock", FK_COLUMNS="ManufacturerVehicleStockId" */
+    FK_CONSTRAINT="FK_Sales.SalesOrderVehicleDetail_Production.ManufacturerVehicleStock", FK_COLUMNS="ManufacturerVehicleStockId" */
     IF EXISTS (SELECT * FROM deleted,Production.ManufacturerVehicleStock
       WHERE
         /* %JoinFKPK(deleted,Production.ManufacturerVehicleStock," = "," AND") */
@@ -5044,7 +5060,7 @@ BEGIN
     /* ERWIN_RELATION:CHECKSUM="00000000", PARENT_OWNER="Sales", PARENT_TABLE="SalesOrderVehicle"
     CHILD_OWNER="Sales", CHILD_TABLE="SalesOrderVehicleDetail"
     P2C_VERB_PHRASE="is described by", C2P_VERB_PHRASE="describes", 
-    FK_CONSTRAINT="FK_SalesOrderVehicleDetail_SalesOrderVehicle", FK_COLUMNS="SalesOrderVehicleId" */
+    FK_CONSTRAINT="FK_Sales.SalesOrderVehicleDetail_Sales.SalesOrderVehicle", FK_COLUMNS="SalesOrderVehicleId" */
     IF EXISTS (SELECT * FROM deleted,Sales.SalesOrderVehicle
       WHERE
         /* %JoinFKPK(deleted,Sales.SalesOrderVehicle," = "," AND") */
@@ -5093,10 +5109,10 @@ BEGIN
   SELECT @numrows = @@rowcount
   /* erwin Builtin Trigger */
   /* DbSecurity.UserAuthorization authorizes Sales.SalesOrderVehicleDetail on child update no action */
-  /* ERWIN_RELATION:CHECKSUM="00062027", PARENT_OWNER="DbSecurity", PARENT_TABLE="UserAuthorization"
+  /* ERWIN_RELATION:CHECKSUM="00064981", PARENT_OWNER="DbSecurity", PARENT_TABLE="UserAuthorization"
     CHILD_OWNER="Sales", CHILD_TABLE="SalesOrderVehicleDetail"
     P2C_VERB_PHRASE="authorizes", C2P_VERB_PHRASE="is authorized by", 
-    FK_CONSTRAINT="FK_SalesOrderVehicleDetail_UserAuthorization", FK_COLUMNS="UserAuthorizationId" */
+    FK_CONSTRAINT="FK_Sales.SalesOrderVehicleDetail_DbSecurity.UserAuthorization", FK_COLUMNS="UserAuthorizationId" */
   IF
     /* %ChildFK(" OR",UPDATE) */
     UPDATE(UserAuthorizationId)
@@ -5123,7 +5139,7 @@ BEGIN
   /* ERWIN_RELATION:CHECKSUM="00000000", PARENT_OWNER="Production", PARENT_TABLE="ManufacturerVehicleStock"
     CHILD_OWNER="Sales", CHILD_TABLE="SalesOrderVehicleDetail"
     P2C_VERB_PHRASE="is the specific vehicle listed in", C2P_VERB_PHRASE="contains the specific vehicle", 
-    FK_CONSTRAINT="FK_SalesOrderVehicleDetail_ManufacturerVehicleStock", FK_COLUMNS="ManufacturerVehicleStockId" */
+    FK_CONSTRAINT="FK_Sales.SalesOrderVehicleDetail_Production.ManufacturerVehicleStock", FK_COLUMNS="ManufacturerVehicleStockId" */
   IF
     /* %ChildFK(" OR",UPDATE) */
     UPDATE(ManufacturerVehicleStockId)
@@ -5150,7 +5166,7 @@ BEGIN
   /* ERWIN_RELATION:CHECKSUM="00000000", PARENT_OWNER="Sales", PARENT_TABLE="SalesOrderVehicle"
     CHILD_OWNER="Sales", CHILD_TABLE="SalesOrderVehicleDetail"
     P2C_VERB_PHRASE="is described by", C2P_VERB_PHRASE="describes", 
-    FK_CONSTRAINT="FK_SalesOrderVehicleDetail_SalesOrderVehicle", FK_COLUMNS="SalesOrderVehicleId" */
+    FK_CONSTRAINT="FK_Sales.SalesOrderVehicleDetail_Sales.SalesOrderVehicle", FK_COLUMNS="SalesOrderVehicleId" */
   IF
     /* %ChildFK(" OR",UPDATE) */
     UPDATE(SalesOrderVehicleId)
@@ -5197,10 +5213,10 @@ BEGIN
            @errmsg  varchar(255)
     /* erwin Builtin Trigger */
     /* HumanResources.Staff handles the sale of Sales.SalesOrderVehicle on parent delete no action */
-    /* ERWIN_RELATION:CHECKSUM="0005cbc5", PARENT_OWNER="HumanResources", PARENT_TABLE="Staff"
+    /* ERWIN_RELATION:CHECKSUM="000607ff", PARENT_OWNER="HumanResources", PARENT_TABLE="Staff"
     CHILD_OWNER="Sales", CHILD_TABLE="SalesOrderVehicle"
     P2C_VERB_PHRASE="handles the sale of", C2P_VERB_PHRASE="is sold by", 
-    FK_CONSTRAINT="FK_SalesOrderVehicle_Staff", FK_COLUMNS="StaffId" */
+    FK_CONSTRAINT="FK_Sales.SalesOrderVehicle_HumanResources.Staff", FK_COLUMNS="StaffId" */
     IF EXISTS (
       SELECT * FROM deleted,Sales.SalesOrderVehicle
       WHERE
@@ -5218,7 +5234,7 @@ BEGIN
     /* ERWIN_RELATION:CHECKSUM="00000000", PARENT_OWNER="HumanResources", PARENT_TABLE="Staff"
     CHILD_OWNER="HumanResources", CHILD_TABLE="Staff"
     P2C_VERB_PHRASE="manages", C2P_VERB_PHRASE="is managed by", 
-    FK_CONSTRAINT="FK_Staff_Staff", FK_COLUMNS="ManagerId" */
+    FK_CONSTRAINT="FK_HumanResources.Staff_HumanResources.Staff", FK_COLUMNS="ManagerId" */
     IF EXISTS (
       SELECT * FROM deleted,HumanResources.Staff
       WHERE
@@ -5236,7 +5252,7 @@ BEGIN
     /* ERWIN_RELATION:CHECKSUM="00000000", PARENT_OWNER="DbSecurity", PARENT_TABLE="UserAuthorization"
     CHILD_OWNER="HumanResources", CHILD_TABLE="Staff"
     P2C_VERB_PHRASE="authorizes", C2P_VERB_PHRASE="is authorized by", 
-    FK_CONSTRAINT="FK_Staff_UserAuthorization", FK_COLUMNS="UserAuthorizationId" */
+    FK_CONSTRAINT="FK_HumanResources.Staff_DbSecurity.UserAuthorization", FK_COLUMNS="UserAuthorizationId" */
     IF EXISTS (SELECT * FROM deleted,DbSecurity.UserAuthorization
       WHERE
         /* %JoinFKPK(deleted,DbSecurity.UserAuthorization," = "," AND") */
@@ -5259,7 +5275,7 @@ BEGIN
     /* ERWIN_RELATION:CHECKSUM="00000000", PARENT_OWNER="HumanResources", PARENT_TABLE="Staff"
     CHILD_OWNER="HumanResources", CHILD_TABLE="Staff"
     P2C_VERB_PHRASE="manages", C2P_VERB_PHRASE="is managed by", 
-    FK_CONSTRAINT="FK_Staff_Staff", FK_COLUMNS="ManagerId" */
+    FK_CONSTRAINT="FK_HumanResources.Staff_HumanResources.Staff", FK_COLUMNS="ManagerId" */
     IF EXISTS (SELECT * FROM deleted,HumanResources.Staff
       WHERE
         /* %JoinFKPK(deleted,HumanResources.Staff," = "," AND") */
@@ -5308,10 +5324,10 @@ BEGIN
   SELECT @numrows = @@rowcount
   /* erwin Builtin Trigger */
   /* HumanResources.Staff handles the sale of Sales.SalesOrderVehicle on parent update no action */
-  /* ERWIN_RELATION:CHECKSUM="00062e65", PARENT_OWNER="HumanResources", PARENT_TABLE="Staff"
+  /* ERWIN_RELATION:CHECKSUM="0006736d", PARENT_OWNER="HumanResources", PARENT_TABLE="Staff"
     CHILD_OWNER="Sales", CHILD_TABLE="SalesOrderVehicle"
     P2C_VERB_PHRASE="handles the sale of", C2P_VERB_PHRASE="is sold by", 
-    FK_CONSTRAINT="FK_SalesOrderVehicle_Staff", FK_COLUMNS="StaffId" */
+    FK_CONSTRAINT="FK_Sales.SalesOrderVehicle_HumanResources.Staff", FK_COLUMNS="StaffId" */
   IF
     /* %ParentPK(" OR",UPDATE) */
     UPDATE(StaffId)
@@ -5334,7 +5350,7 @@ BEGIN
   /* ERWIN_RELATION:CHECKSUM="00000000", PARENT_OWNER="HumanResources", PARENT_TABLE="Staff"
     CHILD_OWNER="HumanResources", CHILD_TABLE="Staff"
     P2C_VERB_PHRASE="manages", C2P_VERB_PHRASE="is managed by", 
-    FK_CONSTRAINT="FK_Staff_Staff", FK_COLUMNS="ManagerId" */
+    FK_CONSTRAINT="FK_HumanResources.Staff_HumanResources.Staff", FK_COLUMNS="ManagerId" */
   IF
     /* %ParentPK(" OR",UPDATE) */
     UPDATE(StaffId)
@@ -5357,7 +5373,7 @@ BEGIN
   /* ERWIN_RELATION:CHECKSUM="00000000", PARENT_OWNER="DbSecurity", PARENT_TABLE="UserAuthorization"
     CHILD_OWNER="HumanResources", CHILD_TABLE="Staff"
     P2C_VERB_PHRASE="authorizes", C2P_VERB_PHRASE="is authorized by", 
-    FK_CONSTRAINT="FK_Staff_UserAuthorization", FK_COLUMNS="UserAuthorizationId" */
+    FK_CONSTRAINT="FK_HumanResources.Staff_DbSecurity.UserAuthorization", FK_COLUMNS="UserAuthorizationId" */
   IF
     /* %ChildFK(" OR",UPDATE) */
     UPDATE(UserAuthorizationId)
@@ -5384,7 +5400,7 @@ BEGIN
   /* ERWIN_RELATION:CHECKSUM="00000000", PARENT_OWNER="HumanResources", PARENT_TABLE="Staff"
     CHILD_OWNER="HumanResources", CHILD_TABLE="Staff"
     P2C_VERB_PHRASE="manages", C2P_VERB_PHRASE="is managed by", 
-    FK_CONSTRAINT="FK_Staff_Staff", FK_COLUMNS="ManagerId" */
+    FK_CONSTRAINT="FK_HumanResources.Staff_HumanResources.Staff", FK_COLUMNS="ManagerId" */
   IF
     /* %ChildFK(" OR",UPDATE) */
     UPDATE(ManagerId)
@@ -5431,10 +5447,10 @@ BEGIN
            @errmsg  varchar(255)
     /* erwin Builtin Trigger */
     /* Sales.SalesCategoryThreshold is a description of the sale price bounds for Sales.SalesOrderVehicle on parent delete no action */
-    /* ERWIN_RELATION:CHECKSUM="000375b8", PARENT_OWNER="Sales", PARENT_TABLE="SalesCategoryThreshold"
+    /* ERWIN_RELATION:CHECKSUM="00038c0e", PARENT_OWNER="Sales", PARENT_TABLE="SalesCategoryThreshold"
     CHILD_OWNER="Sales", CHILD_TABLE="SalesOrderVehicle"
     P2C_VERB_PHRASE="is a description of the sale price bounds for", C2P_VERB_PHRASE="should fall within the price bounds of", 
-    FK_CONSTRAINT="FK_SalesOrderVehicle_SalesCategoryThreshold", FK_COLUMNS="SalesCategoryThresholdId" */
+    FK_CONSTRAINT="FK_Sales.SalesOrderVehicle_Sales.SalesCategoryThreshold", FK_COLUMNS="SalesCategoryThresholdId" */
     IF EXISTS (
       SELECT * FROM deleted,Sales.SalesOrderVehicle
       WHERE
@@ -5452,7 +5468,7 @@ BEGIN
     /* ERWIN_RELATION:CHECKSUM="00000000", PARENT_OWNER="DbSecurity", PARENT_TABLE="UserAuthorization"
     CHILD_OWNER="Sales", CHILD_TABLE="SalesCategoryThreshold"
     P2C_VERB_PHRASE="authorizes", C2P_VERB_PHRASE="is authorized by", 
-    FK_CONSTRAINT="FK_SalesCategoryThreshold_UserAuthorization", FK_COLUMNS="UserAuthorizationId" */
+    FK_CONSTRAINT="FK_Sales.SalesCategoryThreshold_DbSecurity.UserAuthorization", FK_COLUMNS="UserAuthorizationId" */
     IF EXISTS (SELECT * FROM deleted,DbSecurity.UserAuthorization
       WHERE
         /* %JoinFKPK(deleted,DbSecurity.UserAuthorization," = "," AND") */
@@ -5501,10 +5517,10 @@ BEGIN
   SELECT @numrows = @@rowcount
   /* erwin Builtin Trigger */
   /* Sales.SalesCategoryThreshold is a description of the sale price bounds for Sales.SalesOrderVehicle on parent update no action */
-  /* ERWIN_RELATION:CHECKSUM="00039f96", PARENT_OWNER="Sales", PARENT_TABLE="SalesCategoryThreshold"
+  /* ERWIN_RELATION:CHECKSUM="0003b7a6", PARENT_OWNER="Sales", PARENT_TABLE="SalesCategoryThreshold"
     CHILD_OWNER="Sales", CHILD_TABLE="SalesOrderVehicle"
     P2C_VERB_PHRASE="is a description of the sale price bounds for", C2P_VERB_PHRASE="should fall within the price bounds of", 
-    FK_CONSTRAINT="FK_SalesOrderVehicle_SalesCategoryThreshold", FK_COLUMNS="SalesCategoryThresholdId" */
+    FK_CONSTRAINT="FK_Sales.SalesOrderVehicle_Sales.SalesCategoryThreshold", FK_COLUMNS="SalesCategoryThresholdId" */
   IF
     /* %ParentPK(" OR",UPDATE) */
     UPDATE(SalesCategoryThresholdId)
@@ -5527,7 +5543,7 @@ BEGIN
   /* ERWIN_RELATION:CHECKSUM="00000000", PARENT_OWNER="DbSecurity", PARENT_TABLE="UserAuthorization"
     CHILD_OWNER="Sales", CHILD_TABLE="SalesCategoryThreshold"
     P2C_VERB_PHRASE="authorizes", C2P_VERB_PHRASE="is authorized by", 
-    FK_CONSTRAINT="FK_SalesCategoryThreshold_UserAuthorization", FK_COLUMNS="UserAuthorizationId" */
+    FK_CONSTRAINT="FK_Sales.SalesCategoryThreshold_DbSecurity.UserAuthorization", FK_COLUMNS="UserAuthorizationId" */
   IF
     /* %ChildFK(" OR",UPDATE) */
     UPDATE(UserAuthorizationId)
@@ -5574,7 +5590,7 @@ BEGIN
            @errmsg  varchar(255)
     /* erwin Builtin Trigger */
     /* DbSecurity.UserAuthorization authorizes Sales.SalesOrderVehicle on parent delete no action */
-    /* ERWIN_RELATION:CHECKSUM="000cd3c2", PARENT_OWNER="DbSecurity", PARENT_TABLE="UserAuthorization"
+    /* ERWIN_RELATION:CHECKSUM="000d1366", PARENT_OWNER="DbSecurity", PARENT_TABLE="UserAuthorization"
     CHILD_OWNER="Sales", CHILD_TABLE="SalesOrderVehicle"
     P2C_VERB_PHRASE="authorizes", C2P_VERB_PHRASE="is authorized by", 
     FK_CONSTRAINT="FK_Sales.SalesOrderVehicle_DbSecurity.UserAuthorization", FK_COLUMNS="UserAuthorizationId" */
@@ -5595,7 +5611,7 @@ BEGIN
     /* ERWIN_RELATION:CHECKSUM="00000000", PARENT_OWNER="DbSecurity", PARENT_TABLE="UserAuthorization"
     CHILD_OWNER="HumanResources", CHILD_TABLE="Staff"
     P2C_VERB_PHRASE="authorizes", C2P_VERB_PHRASE="is authorized by", 
-    FK_CONSTRAINT="FK_Staff_UserAuthorization", FK_COLUMNS="UserAuthorizationId" */
+    FK_CONSTRAINT="FK_HumanResources.Staff_DbSecurity.UserAuthorization", FK_COLUMNS="UserAuthorizationId" */
     IF EXISTS (
       SELECT * FROM deleted,HumanResources.Staff
       WHERE
@@ -5613,7 +5629,7 @@ BEGIN
     /* ERWIN_RELATION:CHECKSUM="00000000", PARENT_OWNER="DbSecurity", PARENT_TABLE="UserAuthorization"
     CHILD_OWNER="Sales", CHILD_TABLE="SalesOrderVehicleDetail"
     P2C_VERB_PHRASE="authorizes", C2P_VERB_PHRASE="is authorized by", 
-    FK_CONSTRAINT="FK_SalesOrderVehicleDetail_UserAuthorization", FK_COLUMNS="UserAuthorizationId" */
+    FK_CONSTRAINT="FK_Sales.SalesOrderVehicleDetail_DbSecurity.UserAuthorization", FK_COLUMNS="UserAuthorizationId" */
     IF EXISTS (
       SELECT * FROM deleted,Sales.SalesOrderVehicleDetail
       WHERE
@@ -5631,7 +5647,7 @@ BEGIN
     /* ERWIN_RELATION:CHECKSUM="00000000", PARENT_OWNER="DbSecurity", PARENT_TABLE="UserAuthorization"
     CHILD_OWNER="Sales", CHILD_TABLE="SalesCategoryThreshold"
     P2C_VERB_PHRASE="authorizes", C2P_VERB_PHRASE="is authorized by", 
-    FK_CONSTRAINT="FK_SalesCategoryThreshold_UserAuthorization", FK_COLUMNS="UserAuthorizationId" */
+    FK_CONSTRAINT="FK_Sales.SalesCategoryThreshold_DbSecurity.UserAuthorization", FK_COLUMNS="UserAuthorizationId" */
     IF EXISTS (
       SELECT * FROM deleted,Sales.SalesCategoryThreshold
       WHERE
@@ -5667,7 +5683,7 @@ BEGIN
     /* ERWIN_RELATION:CHECKSUM="00000000", PARENT_OWNER="DbSecurity", PARENT_TABLE="UserAuthorization"
     CHILD_OWNER="Production", CHILD_TABLE="ManufacturerModel"
     P2C_VERB_PHRASE="authorizes", C2P_VERB_PHRASE="is authorized by", 
-    FK_CONSTRAINT="FK_ManufacturerModel_UserAuthorization", FK_COLUMNS="UserAuthorizationId" */
+    FK_CONSTRAINT="FK_Production.ManufacturerModel_DbSecurity.UserAuthorization", FK_COLUMNS="UserAuthorizationId" */
     IF EXISTS (
       SELECT * FROM deleted,Production.ManufacturerModel
       WHERE
@@ -5685,7 +5701,7 @@ BEGIN
     /* ERWIN_RELATION:CHECKSUM="00000000", PARENT_OWNER="DbSecurity", PARENT_TABLE="UserAuthorization"
     CHILD_OWNER="Production", CHILD_TABLE="ManufacturerVehicleMake"
     P2C_VERB_PHRASE="authorizes", C2P_VERB_PHRASE="is authorized by", 
-    FK_CONSTRAINT="FK_ManufacturerVehicleMake_UserAuthorization", FK_COLUMNS="UserAuthorizationId" */
+    FK_CONSTRAINT="FK_Production.ManufacturerVehicleMake_DbSecurity.UserAuthorization", FK_COLUMNS="UserAuthorizationId" */
     IF EXISTS (
       SELECT * FROM deleted,Production.ManufacturerVehicleMake
       WHERE
@@ -5703,7 +5719,7 @@ BEGIN
     /* ERWIN_RELATION:CHECKSUM="00000000", PARENT_OWNER="DbSecurity", PARENT_TABLE="UserAuthorization"
     CHILD_OWNER="Sales", CHILD_TABLE="Customer"
     P2C_VERB_PHRASE="authorizes", C2P_VERB_PHRASE="is authorized by", 
-    FK_CONSTRAINT="FK_Customer_UserAuthorization", FK_COLUMNS="UserAuthorizationId" */
+    FK_CONSTRAINT="FK_Sales.Customer_DbSecurity.UserAuthorization", FK_COLUMNS="UserAuthorizationId" */
     IF EXISTS (
       SELECT * FROM deleted,Sales.Customer
       WHERE
@@ -5721,7 +5737,7 @@ BEGIN
     /* ERWIN_RELATION:CHECKSUM="00000000", PARENT_OWNER="DbSecurity", PARENT_TABLE="UserAuthorization"
     CHILD_OWNER="Locale", CHILD_TABLE="Country"
     P2C_VERB_PHRASE="authorizes", C2P_VERB_PHRASE="is authorized by", 
-    FK_CONSTRAINT="FK_Country_UserAuthorization", FK_COLUMNS="UserAuthorizationId" */
+    FK_CONSTRAINT="FK_Locale.Country_DbSecurity.UserAuthorization", FK_COLUMNS="UserAuthorizationId" */
     IF EXISTS (
       SELECT * FROM deleted,Locale.Country
       WHERE
@@ -5765,7 +5781,7 @@ BEGIN
   SELECT @numrows = @@rowcount
   /* erwin Builtin Trigger */
   /* DbSecurity.UserAuthorization authorizes Sales.SalesOrderVehicle on parent update no action */
-  /* ERWIN_RELATION:CHECKSUM="000dcfcb", PARENT_OWNER="DbSecurity", PARENT_TABLE="UserAuthorization"
+  /* ERWIN_RELATION:CHECKSUM="000e1a14", PARENT_OWNER="DbSecurity", PARENT_TABLE="UserAuthorization"
     CHILD_OWNER="Sales", CHILD_TABLE="SalesOrderVehicle"
     P2C_VERB_PHRASE="authorizes", C2P_VERB_PHRASE="is authorized by", 
     FK_CONSTRAINT="FK_Sales.SalesOrderVehicle_DbSecurity.UserAuthorization", FK_COLUMNS="UserAuthorizationId" */
@@ -5791,7 +5807,7 @@ BEGIN
   /* ERWIN_RELATION:CHECKSUM="00000000", PARENT_OWNER="DbSecurity", PARENT_TABLE="UserAuthorization"
     CHILD_OWNER="HumanResources", CHILD_TABLE="Staff"
     P2C_VERB_PHRASE="authorizes", C2P_VERB_PHRASE="is authorized by", 
-    FK_CONSTRAINT="FK_Staff_UserAuthorization", FK_COLUMNS="UserAuthorizationId" */
+    FK_CONSTRAINT="FK_HumanResources.Staff_DbSecurity.UserAuthorization", FK_COLUMNS="UserAuthorizationId" */
   IF
     /* %ParentPK(" OR",UPDATE) */
     UPDATE(UserAuthorizationId)
@@ -5814,7 +5830,7 @@ BEGIN
   /* ERWIN_RELATION:CHECKSUM="00000000", PARENT_OWNER="DbSecurity", PARENT_TABLE="UserAuthorization"
     CHILD_OWNER="Sales", CHILD_TABLE="SalesOrderVehicleDetail"
     P2C_VERB_PHRASE="authorizes", C2P_VERB_PHRASE="is authorized by", 
-    FK_CONSTRAINT="FK_SalesOrderVehicleDetail_UserAuthorization", FK_COLUMNS="UserAuthorizationId" */
+    FK_CONSTRAINT="FK_Sales.SalesOrderVehicleDetail_DbSecurity.UserAuthorization", FK_COLUMNS="UserAuthorizationId" */
   IF
     /* %ParentPK(" OR",UPDATE) */
     UPDATE(UserAuthorizationId)
@@ -5837,7 +5853,7 @@ BEGIN
   /* ERWIN_RELATION:CHECKSUM="00000000", PARENT_OWNER="DbSecurity", PARENT_TABLE="UserAuthorization"
     CHILD_OWNER="Sales", CHILD_TABLE="SalesCategoryThreshold"
     P2C_VERB_PHRASE="authorizes", C2P_VERB_PHRASE="is authorized by", 
-    FK_CONSTRAINT="FK_SalesCategoryThreshold_UserAuthorization", FK_COLUMNS="UserAuthorizationId" */
+    FK_CONSTRAINT="FK_Sales.SalesCategoryThreshold_DbSecurity.UserAuthorization", FK_COLUMNS="UserAuthorizationId" */
   IF
     /* %ParentPK(" OR",UPDATE) */
     UPDATE(UserAuthorizationId)
@@ -5883,7 +5899,7 @@ BEGIN
   /* ERWIN_RELATION:CHECKSUM="00000000", PARENT_OWNER="DbSecurity", PARENT_TABLE="UserAuthorization"
     CHILD_OWNER="Production", CHILD_TABLE="ManufacturerModel"
     P2C_VERB_PHRASE="authorizes", C2P_VERB_PHRASE="is authorized by", 
-    FK_CONSTRAINT="FK_ManufacturerModel_UserAuthorization", FK_COLUMNS="UserAuthorizationId" */
+    FK_CONSTRAINT="FK_Production.ManufacturerModel_DbSecurity.UserAuthorization", FK_COLUMNS="UserAuthorizationId" */
   IF
     /* %ParentPK(" OR",UPDATE) */
     UPDATE(UserAuthorizationId)
@@ -5906,7 +5922,7 @@ BEGIN
   /* ERWIN_RELATION:CHECKSUM="00000000", PARENT_OWNER="DbSecurity", PARENT_TABLE="UserAuthorization"
     CHILD_OWNER="Production", CHILD_TABLE="ManufacturerVehicleMake"
     P2C_VERB_PHRASE="authorizes", C2P_VERB_PHRASE="is authorized by", 
-    FK_CONSTRAINT="FK_ManufacturerVehicleMake_UserAuthorization", FK_COLUMNS="UserAuthorizationId" */
+    FK_CONSTRAINT="FK_Production.ManufacturerVehicleMake_DbSecurity.UserAuthorization", FK_COLUMNS="UserAuthorizationId" */
   IF
     /* %ParentPK(" OR",UPDATE) */
     UPDATE(UserAuthorizationId)
@@ -5929,7 +5945,7 @@ BEGIN
   /* ERWIN_RELATION:CHECKSUM="00000000", PARENT_OWNER="DbSecurity", PARENT_TABLE="UserAuthorization"
     CHILD_OWNER="Sales", CHILD_TABLE="Customer"
     P2C_VERB_PHRASE="authorizes", C2P_VERB_PHRASE="is authorized by", 
-    FK_CONSTRAINT="FK_Customer_UserAuthorization", FK_COLUMNS="UserAuthorizationId" */
+    FK_CONSTRAINT="FK_Sales.Customer_DbSecurity.UserAuthorization", FK_COLUMNS="UserAuthorizationId" */
   IF
     /* %ParentPK(" OR",UPDATE) */
     UPDATE(UserAuthorizationId)
@@ -5952,7 +5968,7 @@ BEGIN
   /* ERWIN_RELATION:CHECKSUM="00000000", PARENT_OWNER="DbSecurity", PARENT_TABLE="UserAuthorization"
     CHILD_OWNER="Locale", CHILD_TABLE="Country"
     P2C_VERB_PHRASE="authorizes", C2P_VERB_PHRASE="is authorized by", 
-    FK_CONSTRAINT="FK_Country_UserAuthorization", FK_COLUMNS="UserAuthorizationId" */
+    FK_CONSTRAINT="FK_Locale.Country_DbSecurity.UserAuthorization", FK_COLUMNS="UserAuthorizationId" */
   IF
     /* %ParentPK(" OR",UPDATE) */
     UPDATE(UserAuthorizationId)

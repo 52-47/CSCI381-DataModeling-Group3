@@ -45,10 +45,11 @@
 - Added double quote delimiter to all constraints.
 
 # Model Update Notes - 12/01/2023
-- Added triggers
-- Added ITVFs
-- Bound to table
-
+- Added triggers.
+- Added ITVFs.
+- Bound to table.
+- Removed StockCode from VehicleOrderDetails table and made ManufacturerVehicleStockId NOT NULL.
+- Revised data insertion to include the appropriate ManufacturerVehicleStockId for each row.
 
 TODO:
 - Find out how to override erwin triggers with custom ones in FET

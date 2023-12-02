@@ -14,6 +14,9 @@ go
 CREATE SCHEMA "HumanResources"
 go
 
+CREATE SCHEMA "Hashing"
+go
+
 CREATE SCHEMA "Sales"
 go
 

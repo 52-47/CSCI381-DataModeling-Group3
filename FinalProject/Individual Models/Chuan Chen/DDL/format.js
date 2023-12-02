@@ -1,6 +1,6 @@
 const fs = require('fs');
 
-const data = fs.readFileSync('data.sql', 'utf8').split('\n');
+const data = fs.readFileSync('fixdata.sql', 'utf8').split('\n');
 
 let writeFileName = 'test.sql';
 
@@ -31,10 +31,11 @@ for(let i = 0; i < data.length; i++){
         
     }
         //*/
-    
-    
-    if(current[2].slice(1, current[2].length - 1) === ) {
 
-    }
+        
+        if(current[2].slice(1, current[2].length - 1) === `Sales"."SalesOrderVehicleDetail`){
+            p(current);
+            fs.appendFile(writeFileName, current.join(' ') + "\n", (err) => {return err});
+        }
    
 };

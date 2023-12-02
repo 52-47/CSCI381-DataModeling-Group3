@@ -143,7 +143,7 @@ go
 
 
 CREATE TYPE "sdLongTextString"."Note"
-	FROM NVARCHAR(50) NULL
+	FROM NVARCHAR(100) NULL
 go
 
 

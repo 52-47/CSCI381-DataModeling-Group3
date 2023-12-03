@@ -51,9 +51,15 @@
 - Removed StockCode from VehicleOrderDetails table and made ManufacturerVehicleStockId NOT NULL.
 - Revised data insertion to include the appropriate ManufacturerVehicleStockId for each row.
 
-TODO:
+
+# Model Update Notes - 12/03/2023
+- Merged Chuan's views & updated triggers.
+- Updated view schemas.
+
+
+## TODO:
+- Create a .sql file with all triggers/functions for all tables.  test as you create to check for errors/ buggy table UDPs.
 - Find out how to override erwin triggers with custom ones in FET
-- Add indexing.
-- Create views.
+- Create custom views.
 - Add subject areas.
 - Generate Reports for presentation.

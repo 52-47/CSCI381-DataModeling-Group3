@@ -61,6 +61,10 @@
 - Remade DDL for tables with new views included.
 - Removed hardcoded Note in update triggers.
 
+# Model Update Notes: 12/05/2023
+- Added indexing to history tables.
+- Updated DDL.
+- Added subject areas to model.
 
 ## TODO:
 - Test Triggers on all tables

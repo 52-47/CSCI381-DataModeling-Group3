@@ -188,6 +188,7 @@ CREATE TYPE "sdDateTime"."DateTimestamp"
 	FROM DATETIME2(7) NOT NULL
 go
 
+
 CREATE TYPE "sdFlag"."FlagBit"
 	FROM INTEGER NULL
 go
@@ -368,17 +369,17 @@ CREATE TYPE "dEuropeanCarManufacturer"."sdKey"
 go
 
 
-CREATE TYPE "VehicleMakeString"
+CREATE TYPE "sdVehicleString"."VehicleMakeString"
 	FROM NVARCHAR(30) NULL
 go
 
 
-CREATE TYPE "VehicleModelString"
+CREATE TYPE "sdVehicleString"."VehicleModelString"
 	FROM NVARCHAR(35) NULL
 go
 
 
-CREATE TYPE "StockIdNumber"
+CREATE TYPE "sdSequenceNumber"."StockIdNumber"
 	FROM INT NOT NULL
 go
 
@@ -388,7 +389,7 @@ CREATE TYPE "sdNumber"."Currency"
 go
 
 
-CREATE TYPE "DateYYYYMMDD"
+CREATE TYPE "sdDate"."DateYYYYMMDD"
 	FROM DATE NULL
 go
 
@@ -398,7 +399,7 @@ CREATE TYPE "sdProjectString"."IndividualProjectNameString"
 go
 
 
-CREATE TYPE "sdFlag"
+CREATE TYPE "dEuropeanCarManufacturer"."sdFlag"
 	FROM INTEGER NULL
 go
 
@@ -1161,8 +1162,8 @@ CREATE TABLE "Production"."ManufacturerModel"
 	"ManufacturerModelId" "sdKey"."SurrogateKeyInteger"  NOT NULL 
 	CONSTRAINT "DF_Production_ManufacturerModel_Id"
 		 DEFAULT  NEXT VALUE FOR "SequenceIdInsert"."Production_ManufacturerModel_Id",
-	"ManufacturerModelName" "VehicleModelString"  NOT NULL ,
-	"ManufacturerModelVariant" "VehicleModelString"  NULL ,
+	"ManufacturerModelName" "sdVehicleString"."VehicleModelString"  NOT NULL ,
+	"ManufacturerModelVariant" "sdVehicleString"."VehicleModelString"  NULL ,
 	"ManufacturerVehicleMakeId" "sdKey"."SurrogateKeyInteger"  NOT NULL ,
 	"UserAuthorizationId" "sdKey"."SurrogateKeyInteger"  NOT NULL 
 	CONSTRAINT "DF_Production_ManufacturerModel_UserAuthorizationId"
@@ -1282,7 +1283,7 @@ CREATE TABLE "Production"."ManufacturerVehicleMake"
 	"ManufacturerVehicleMakeId" "sdKey"."SurrogateKeyInteger"  NOT NULL 
 	CONSTRAINT "DF_Production_ManufacturerVehicleMake_Id"
 		 DEFAULT  NEXT VALUE FOR "SequenceIdInsert"."Production_ManufacturerVehicleMake_Id",
-	"ManufacturerVehicleMakeName" "VehicleMakeString"  NOT NULL ,
+	"ManufacturerVehicleMakeName" "sdVehicleString"."VehicleMakeString"  NOT NULL ,
 	"CountryId"          "sdKey"."SurrogateKeyInteger"  NOT NULL ,
 	"UserAuthorizationId" "sdKey"."SurrogateKeyInteger"  NOT NULL 
 	CONSTRAINT "DF_Production_ManufacturerVehicleMake_UserAuthorizationId"
@@ -1414,7 +1415,7 @@ CREATE TABLE "Production"."ManufacturerVehicleStock"
 	"VehicleColor"       "sdVehicleString"."VehicleColor"  NOT NULL ,
 	"CustomerComment"    "sdLongTextString"."CustomerComments"  NULL ,
 	"ModelId"            "sdKey"."SurrogateKeyInteger"  NULL ,
-	"PurchaseDate"       "DateYYYYMMDD"  NOT NULL 
+	"PurchaseDate"       "sdDate"."DateYYYYMMDD"  NOT NULL 
 	CONSTRAINT "DF_Production_ManufacturerVehicleStock_PurchaseDate"
 		 DEFAULT  sysdatetime(),
 	"UserAuthorizationId" "sdKey"."SurrogateKeyInteger"  NOT NULL 
@@ -1582,8 +1583,8 @@ go
 CREATE TABLE "Audit"."ProductionManufacturerModelHistory"
 ( 
 	"ManufacturerModelId" "sdKey"."SurrogateKeyInteger"  NOT NULL ,
-	"ManufacturerModelName" "VehicleModelString"  NOT NULL ,
-	"ManufacturerModelVariant" "VehicleModelString"  NULL ,
+	"ManufacturerModelName" "sdVehicleString"."VehicleModelString"  NOT NULL ,
+	"ManufacturerModelVariant" "sdVehicleString"."VehicleModelString"  NULL ,
 	"ManufacturerVehicleMakeId" "sdKey"."SurrogateKeyInteger"  NOT NULL ,
 	"UserAuthorizationId" "sdKey"."SurrogateKeyInteger"  NOT NULL ,
 	"SysStartTime"       "sdDateTime"."DateTimestamp"  NULL ,
@@ -1725,7 +1726,7 @@ go
 CREATE TABLE "Audit"."ProductionManufacturerVehicleMakeHistory"
 ( 
 	"ManufacturerVehicleMakeId" "sdKey"."SurrogateKeyInteger"  NOT NULL ,
-	"ManufacturerVehicleMakeName" "VehicleMakeString"  NOT NULL ,
+	"ManufacturerVehicleMakeName" "sdVehicleString"."VehicleMakeString"  NOT NULL ,
 	"CountryId"          "sdKey"."SurrogateKeyInteger"  NOT NULL ,
 	"UserAuthorizationId" "sdKey"."SurrogateKeyInteger"  NOT NULL ,
 	"SysStartTime"       "sdDateTime"."DateTimestamp"  NULL ,
@@ -1877,8 +1878,8 @@ CREATE TABLE "Audit"."ProductionManufacturerVehicleStockHistory"
 	"VehicleColor"       "sdVehicleString"."VehicleColor"  NOT NULL ,
 	"CustomerComment"    "sdLongTextString"."CustomerComments"  NULL ,
 	"ModelId"            "sdKey"."SurrogateKeyInteger" ,
-	"StockId"            "StockIdNumber"  NULL ,
-	"PurchaseDate"       "DateYYYYMMDD"  NOT NULL ,
+	"StockId"            "sdSequenceNumber"."StockIdNumber"  NULL ,
+	"PurchaseDate"       "sdDate"."DateYYYYMMDD"  NOT NULL ,
 	"UserAuthorizationId" "sdKey"."SurrogateKeyInteger"  NOT NULL ,
 	"SysStartTime"       "sdDateTime"."DateTimestamp"  NULL ,
 	"SysEndTime"         "sdDateTime"."DateTimestamp"  NULL ,
@@ -2404,7 +2405,7 @@ CREATE TABLE "Sales"."SalesOrderVehicle"
 	"TotalSalePrice"     "sdNumber"."Currency"  NOT NULL 
 	CONSTRAINT "DF_Sales_SalesOrderVehicle_TotalSalePrice"
 		 DEFAULT  0,
-	"SaleDate"           "DateYYYYMMDD"  NOT NULL 
+	"SaleDate"           "sdDate"."DateYYYYMMDD"  NOT NULL 
 	CONSTRAINT "DF_Sales_SalesOrderVehicle_SaleDate"
 		 DEFAULT  sysdatetime(),
 	"UserAuthorizationId" "sdKey"."SurrogateKeyInteger"  NOT NULL 
@@ -3010,7 +3011,7 @@ CREATE TABLE "Audit"."SalesSalesOrderVehicleHistory"
 	"StaffId"            "sdKey"."SurrogateKeyInteger"  NOT NULL ,
 	"InvoiceNumber"      "sdShortTextString"."InvoiceNumber"  NOT NULL ,
 	"TotalSalePrice"     "sdNumber"."Currency"  NOT NULL ,
-	"SaleDate"           "DateYYYYMMDD"  NOT NULL ,
+	"SaleDate"           "sdDate"."DateYYYYMMDD"  NOT NULL ,
 	"UserAuthorizationId" "sdKey"."SurrogateKeyInteger"  NOT NULL ,
 	"SysStartTime"       "sdDateTime"."DateTimestamp"  NULL ,
 	"SysEndTime"         "sdDateTime"."DateTimestamp"  NULL ,

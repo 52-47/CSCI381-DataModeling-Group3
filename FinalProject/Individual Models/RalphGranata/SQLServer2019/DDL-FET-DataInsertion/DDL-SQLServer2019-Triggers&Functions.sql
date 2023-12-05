@@ -3,234 +3,6 @@
 -- Creation Date: 11/30/2023
 -- Modification Date: 11/30/2023
 
--- Function Name: "Hashing"."CreateSha256KeyFromJsonInputLocaleCountry"
--- Description: Create SHA256 Hashkey from JSON Input
-
-
-CREATE FUNCTION "Hashing"."CreateSha256KeyFromJsonInputLocaleCountry" (@Pky int)
-RETURNS VARBINARY(32)
-AS
-BEGIN
-  DECLARE @ColumnOutputInJSONIncludingNullValues nvarchar(max) =
-  (
-    SELECT "d"."CountryId", "d"."CountryISO3", "d"."CountryName", "d"."CountryISO2", "d"."SalesRegion", "d"."TransactionNumber", "d"."Note", "d"."UserAuthorizationId", "d"."SysStartTime", "d"."SysEndTime", "d"."RowLevelHashKey", "d"."PriorRowLevelHashKey", "d"."FireAuditTrigger"
-    FROM "Locale"."Country" as "d"
-    WHERE "d"."CountryId" = @Pky
-    FOR JSON AUTO, INCLUDE_NULL_VALUES
-   );
-
-  RETURN HASHBYTES('SHA2_256', @ColumnOutputInJSONIncludingNullValues);
-END;
-go
-
--- View Name: "Audit"."FindUniqueTablePkyLocaleCountry"
--- Description: TSQL-vwFindUniqueTablePkyView Templated Code plus LocaleCountry
-
-CREATE VIEW "Audit"."vwFindUniqueTablePkyLocaleCountry" AS
-
-  SELECT "CurrentTable"."CountryId"
-  FROM "Locale"."Country" AS "CurrentTable"
-  UNION
-  SELECT "AuditHistory"."CountryId"
-  FROM "Audit"."LocaleCountryHistory" 
-  AS "AuditHistory"
-GO
-
--- Author: Ralph Granata
--- Creation Date: 11/30/2023
--- Modification Date: 11/30/2023
-
--- Trigger Name: Locale.uTd_Country on Locale.Country
--- Trigger Type: After WITH EXECUTE AS CALLER AFTER DELETE
-
--- Description: TSQL-AuditDeleteTrigger Templated Code
-
-CREATE TRIGGER "Locale"."uTd_Country" on "Locale"."Country"
-WITH
-  EXECUTE AS CALLER AFTER DELETE
-
-AS
-
-BEGIN
-
-DECLARE
-@NowTimestamp datetime = sysdatetime(),
-@DBAction char(1) = 'D',
-@isDeleted char(1) = 'Y'
-
--- Trigger Code
---
-
-INSERT into "Audit"."LocaleCountryHistory"
-(
-  "d"."CountryId", "d"."CountryISO3", "d"."CountryName", "d"."CountryISO2", "d"."SalesRegion", "d"."TransactionNumber", "d"."Note", "d"."UserAuthorizationId", "d"."SysStartTime", "d"."SysEndTime", "d"."RowLevelHashKey", "d"."PriorRowLevelHashKey", "d"."FireAuditTrigger", "d"."AuditDateTimeStamp", "d"."DBAction", "d"."isDeleted"
-)
-SELECT
-  "d"."CountryId", "d"."CountryISO3", "d"."CountryName", "d"."CountryISO2", "d"."SalesRegion",
-  "d"."TransactionNumber",
-  'Last Transaction prior to deletion: ' + coalesce("d"."Note", concat('No Message Transaction Number: ', "d"."TransactionNumber")),
-  "d"."UserAuthorizationId",
-  "d"."SysStartTime",
-  @NowTimeStamp, -- AS SysEndTime
-  "d"."RowLevelHashKey",
-  "d"."PriorRowLevelHashKey",
-  "d"."FireAuditTrigger",
-  @NowTimeStamp,
-  @DBAction,
-  @isDeleted
-FROM deleted as "d"
-END;
-GO
-
--- Author: Ralph Granata
--- Creation Date: 11/30/2023
--- Modification Date: 11/30/2023
-
--- Trigger Name: Locale.uTi_Country on Locale.Country
--- Trigger Type: After WITH EXECUTE AS CALLER AFTER INSERT
-
--- Description: TSQL-AuditInsertTrigger Templated Code
-
-CREATE TRIGGER "Locale"."uTi_Country" on "Locale"."Country"
-WITH
-  EXECUTE AS CALLER AFTER INSERT
-AS
-BEGIN
-  -- Update the current record hash keys and the temporal range of the transaction of factually being true
-  UPDATE "ut"
-  SET "ut"."RowLevelHashKey" = "Hashing"."CreateSha256KeyFromJsonInputLocaleCountry"("i"."CountryId"),
-      "ut"."PriorRowLevelHashKey" = null,
-      "ut"."Note" = 'Row Inserted',
-      "ut"."FireAuditTrigger" = 'N'
-  FROM "Locale"."Country" as "ut" --updateTable
-    INNER JOIN inserted as "i"
-    ON "i"."CountryId" = "ut"."CountryId"
-       AND "i"."TransactionNumber" = 1;
-END;
-GO
-
--- Author: Ralph Granata
--- Creation Date: 11/30/2023
--- Modification Date: 11/30/2023
-
--- Trigger Name: Locale.uTu_Country on Locale.Country
--- Trigger Type: After WITH EXECUTE AS CALLER AFTER UPDATE
-
--- Description: TSQL-AuditInsertTrigger Templated Code
-
-CREATE TRIGGER "Locale"."uTu_Country" on "Locale"."Country"
-WITH
-  EXECUTE AS CALLER AFTER UPDATE
-
-AS
-BEGIN
-  DECLARE
-  @NowTimeStamp datetime2(7) = sysdatetime(),
-  @OpenEndedSysEndTime datetime2(7) = '99991231 23:59:59.9999999',
-  @FireAuditTrigger char(1) = 'N',
-  @DBAction char(1) = 'U',
-  @isDeleted char(1) = 'N',
-  @UpdatedNote varchar(100) = 'Row Updated';
-
-  SELECT @FireAuditTrigger = "i"."FireAuditTrigger"
-  FROM deleted as "d"
-    INNER JOIN inserted as "i"
-      ON "i"."CountryId" = "d"."CountryId"
-    AND "i"."TransactionNumber" = "d"."TransactionNumber";
-
-  -- Audit only if @FireAuditTrigger = 'Y'
-  IF (@FireAuditTrigger = 'Y')
-  BEGIN
-    -- Insert record into audit table
-    INSERT INTO "Audit"."LocaleCountryHistory"
-    (
-      "d"."CountryId","d"."CountryISO3","d"."CountryName","d"."CountryISO2","d"."SalesRegion","d"."TransactionNumber","d"."Note","d"."UserAuthorizationId","d"."SysStartTime","d"."SysEndTime","d"."RowLevelHashKey","d"."PriorRowLevelHashKey","d"."FireAuditTrigger", "d"."AuditDateTimeStamp", "d"."DBAction", "d"."isDeleted"
-    )
-    SELECT
-       "d"."CountryId", "d"."CountryISO3", "d"."CountryName", "d"."CountryISO2", "d"."SalesRegion",
-       "d"."TransactionNumber",
-       coalesce("d"."Note", concat('No Message Transaction Number: ', "d"."TransactionNumber")),
-       "d"."UserAuthorizationId",
-       "d"."SysStartTime",
-       @NowTimeStamp,
-       "d"."RowLevelHashKey",
-       "d"."PriorRowLevelHashKey",
-       "d"."FireAuditTrigger",
-       @NowTimeStamp,
-       @DBAction,
-       @isDeleted
-     FROM deleted AS "d"
-     INNER JOIN inserted AS "i"
-     ON "i"."CountryId" = "d"."CountryId"
-        AND "i"."TransactionNumber" = "d"."TransactionNumber";
-
-     UPDATE "ut"
-     SET "ut"."RowLevelHashKey" = "Hashing"."CreateSha256KeyFromJsonInputLocaleCountry"("i"."CountryId"),
-         "ut"."PriorRowLevelHashKey" = "d"."RowLevelHashKey",
-         "ut"."TransactionNumber" = "d"."TransactionNumber" + 1,
-         "ut"."SysStartTime" = @NowTimeStamp,
-         "ut"."SysEndTime" = @OpenEndedSysEndTime,
-         "ut"."Note" = @UpdatedNote,
-         "ut"."FireAuditTrigger" = 'N'
-     FROM "Locale"."Country" as "ut"
-       INNER JOIN inserted as "i"
-         ON "i"."CountryId" = "ut"."CountryId"
-           AND "i"."TransactionNumber" = "ut"."TransactionNumber"
-           AND "i"."RowLevelHashKey" = "ut"."RowLevelHashKey"
-       INNER JOIN deleted as "d"
-         ON "i"."CountryId" = "d"."CountryId"
-           AND "i"."TransactionNumber" = "d"."TransactionNumber"
-          AND "i"."RowLevelHashKey" = "d"."RowLevelHashKey"; 
-  END;
-END;
-GO
-
--- Author: Ralph Granata
--- Creation Date: 11/30/2023
--- Modification Date: 11/30/2023
-
--- Function Name: "Audit"."itvfnFindAllTransactionsByTablePkyOfLocaleCountry" ()
--- Description: A view to find all transactions by Primary Key
-
-CREATE FUNCTION "Audit"."itvfnFindAllTransactionsByTablePkyOfLocaleCountry" (@Pky int)
-RETURNS TABLE
-AS
-  RETURN 
-  (
-   SELECT 'Current' as TransactionType, NULL AS "AuditDateTimeStamp", NULL AS "DBAction",
-     "d"."CountryId", "d"."CountryISO3", "d"."CountryName", "d"."CountryISO2", "d"."SalesRegion", "d"."TransactionNumber", "d"."Note", "d"."UserAuthorizationId", "d"."SysStartTime", "d"."SysEndTime", "d"."RowLevelHashKey", "d"."PriorRowLevelHashKey", "d"."FireAuditTrigger"
-   FROM "Locale"."Country" AS "d"
-   WHERE "d"."CountryId" = @Pky
-   UNION
-   SELECT 'History' as TransactionType, "d"."AuditDateTimeStamp", "d"."DBAction",
-     "d"."CountryId", "d"."CountryISO3", "d"."CountryName", "d"."CountryISO2", "d"."SalesRegion", "d"."TransactionNumber", "d"."Note", "d"."UserAuthorizationId", "d"."SysStartTime", "d"."SysEndTime", "d"."RowLevelHashKey", "d"."PriorRowLevelHashKey", "d"."FireAuditTrigger"
-   FROM "Audit"."LocaleCountryHistory" as "d"
-   WHERE "d"."CountryId" = @Pky
-  );
-
-go
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
--- Author: Ralph Granata
--- Creation Date: 11/30/2023
--- Modification Date: 11/30/2023
-
 -- Function Name: "Hashing"."CreateSha256KeyFromJsonInputHumanResourcesStaff"
 -- Description: Create SHA256 Hashkey from JSON Input
 
@@ -358,8 +130,7 @@ BEGIN
   @OpenEndedSysEndTime datetime2(7) = '99991231 23:59:59.9999999',
   @FireAuditTrigger char(1) = 'N',
   @DBAction char(1) = 'U',
-  @isDeleted char(1) = 'N',
-  @UpdatedNote varchar(100) = 'Row Updated';
+  @isDeleted char(1) = 'N';
 
   SELECT @FireAuditTrigger = "i"."FireAuditTrigger"
   FROM deleted as "d"
@@ -399,7 +170,7 @@ BEGIN
          "ut"."TransactionNumber" = "d"."TransactionNumber" + 1,
          "ut"."SysStartTime" = @NowTimeStamp,
          "ut"."SysEndTime" = @OpenEndedSysEndTime,
-         "ut"."Note" = @UpdatedNote,
+         "ut"."Note" = "i"."Note",
          "ut"."FireAuditTrigger" = 'N'
      FROM "HumanResources"."Staff" as "ut"
        INNER JOIN inserted as "i"
@@ -442,6 +213,218 @@ go
 
 
 
+-- Author: Ralph Granata
+-- Creation Date: 11/30/2023
+-- Modification Date: 11/30/2023
+
+-- Function Name: "Hashing"."CreateSha256KeyFromJsonInputLocaleCountry"
+-- Description: Create SHA256 Hashkey from JSON Input
+
+
+CREATE FUNCTION "Hashing"."CreateSha256KeyFromJsonInputLocaleCountry" (@Pky int)
+RETURNS VARBINARY(32)
+AS
+BEGIN
+  DECLARE @ColumnOutputInJSONIncludingNullValues nvarchar(max) =
+  (
+    SELECT "d"."CountryId", "d"."CountryISO3", "d"."CountryName", "d"."CountryISO2", "d"."SalesRegion", "d"."TransactionNumber", "d"."Note", "d"."UserAuthorizationId", "d"."SysStartTime", "d"."SysEndTime", "d"."RowLevelHashKey", "d"."PriorRowLevelHashKey", "d"."FireAuditTrigger"
+    FROM "Locale"."Country" as "d"
+    WHERE "d"."CountryId" = @Pky
+    FOR JSON AUTO, INCLUDE_NULL_VALUES
+   );
+
+  RETURN HASHBYTES('SHA2_256', @ColumnOutputInJSONIncludingNullValues);
+END;
+go
+
+
+-- View Name: "Audit"."FindUniqueTablePkyLocaleCountry"
+-- Description: TSQL-vwFindUniqueTablePkyView Templated Code plus LocaleCountry
+
+CREATE VIEW "Audit"."vwFindUniqueTablePkyLocaleCountry" AS
+
+  SELECT "CurrentTable"."CountryId"
+  FROM "Locale"."Country" AS "CurrentTable"
+  UNION
+  SELECT "AuditHistory"."CountryId"
+  FROM "Audit"."LocaleCountryHistory" 
+  AS "AuditHistory"
+GO
+
+-- Author: Ralph Granata
+-- Creation Date: 11/30/2023
+-- Modification Date: 11/30/2023
+
+-- Trigger Name: Locale.uTd_Country on Locale.Country
+-- Trigger Type: After WITH EXECUTE AS CALLER AFTER DELETE
+
+-- Description: TSQL-AuditDeleteTrigger Templated Code
+
+CREATE TRIGGER "Locale"."uTd_Country" on "Locale"."Country"
+WITH
+  EXECUTE AS CALLER AFTER DELETE
+
+AS
+
+BEGIN
+
+DECLARE
+@NowTimestamp datetime = sysdatetime(),
+@DBAction char(1) = 'D',
+@isDeleted char(1) = 'Y'
+
+-- Trigger Code
+--
+
+INSERT into "Audit"."LocaleCountryHistory"
+(
+  "d"."CountryId", "d"."CountryISO3", "d"."CountryName", "d"."CountryISO2", "d"."SalesRegion", "d"."TransactionNumber", "d"."Note", "d"."UserAuthorizationId", "d"."SysStartTime", "d"."SysEndTime", "d"."RowLevelHashKey", "d"."PriorRowLevelHashKey", "d"."FireAuditTrigger", "d"."AuditDateTimeStamp", "d"."DBAction", "d"."isDeleted"
+)
+SELECT
+  "d"."CountryId", "d"."CountryISO3", "d"."CountryName", "d"."CountryISO2", "d"."SalesRegion",
+  "d"."TransactionNumber",
+  'Last Transaction prior to deletion: ' + coalesce("d"."Note", concat('No Message Transaction Number: ', "d"."TransactionNumber")),
+  "d"."UserAuthorizationId",
+  "d"."SysStartTime",
+  @NowTimeStamp, -- AS SysEndTime
+  "d"."RowLevelHashKey",
+  "d"."PriorRowLevelHashKey",
+  "d"."FireAuditTrigger",
+  @NowTimeStamp,
+  @DBAction,
+  @isDeleted
+FROM deleted as "d"
+END;
+GO
+
+-- Author: Ralph Granata
+-- Creation Date: 11/30/2023
+-- Modification Date: 11/30/2023
+
+-- Trigger Name: Locale.uTi_Country on Locale.Country
+-- Trigger Type: After WITH EXECUTE AS CALLER AFTER INSERT
+
+-- Description: TSQL-AuditInsertTrigger Templated Code
+
+CREATE TRIGGER "Locale"."uTi_Country" on "Locale"."Country"
+WITH
+  EXECUTE AS CALLER AFTER INSERT
+AS
+BEGIN
+  -- Update the current record hash keys and the temporal range of the transaction of factually being true
+  UPDATE "ut"
+  SET "ut"."RowLevelHashKey" = "Hashing"."CreateSha256KeyFromJsonInputLocaleCountry"("i"."CountryId"),
+      "ut"."PriorRowLevelHashKey" = null,
+      "ut"."Note" = 'Row Inserted',
+      "ut"."FireAuditTrigger" = 'N'
+  FROM "Locale"."Country" as "ut" --updateTable
+    INNER JOIN inserted as "i"
+    ON "i"."CountryId" = "ut"."CountryId"
+       AND "i"."TransactionNumber" = 1;
+END;
+GO
+
+-- Author: Ralph Granata
+-- Creation Date: 11/30/2023
+-- Modification Date: 11/30/2023
+
+-- Trigger Name: Locale.uTu_Country on Locale.Country
+-- Trigger Type: After WITH EXECUTE AS CALLER AFTER UPDATE
+
+-- Description: TSQL-AuditInsertTrigger Templated Code
+
+CREATE TRIGGER "Locale"."uTu_Country" on "Locale"."Country"
+WITH
+  EXECUTE AS CALLER AFTER UPDATE
+
+AS
+BEGIN
+  DECLARE
+  @NowTimeStamp datetime2(7) = sysdatetime(),
+  @OpenEndedSysEndTime datetime2(7) = '99991231 23:59:59.9999999',
+  @FireAuditTrigger char(1) = 'N',
+  @DBAction char(1) = 'U',
+  @isDeleted char(1) = 'N';
+
+  SELECT @FireAuditTrigger = "i"."FireAuditTrigger"
+  FROM deleted as "d"
+    INNER JOIN inserted as "i"
+      ON "i"."CountryId" = "d"."CountryId"
+    AND "i"."TransactionNumber" = "d"."TransactionNumber";
+
+  -- Audit only if @FireAuditTrigger = 'Y'
+  IF (@FireAuditTrigger = 'Y')
+  BEGIN
+    -- Insert record into audit table
+    INSERT INTO "Audit"."LocaleCountryHistory"
+    (
+      "d"."CountryId","d"."CountryISO3","d"."CountryName","d"."CountryISO2","d"."SalesRegion","d"."TransactionNumber","d"."Note","d"."UserAuthorizationId","d"."SysStartTime","d"."SysEndTime","d"."RowLevelHashKey","d"."PriorRowLevelHashKey","d"."FireAuditTrigger", "d"."AuditDateTimeStamp", "d"."DBAction", "d"."isDeleted"
+    )
+    SELECT
+       "d"."CountryId", "d"."CountryISO3", "d"."CountryName", "d"."CountryISO2", "d"."SalesRegion",
+       "d"."TransactionNumber",
+       coalesce("d"."Note", concat('No Message Transaction Number: ', "d"."TransactionNumber")),
+       "d"."UserAuthorizationId",
+       "d"."SysStartTime",
+       @NowTimeStamp,
+       "d"."RowLevelHashKey",
+       "d"."PriorRowLevelHashKey",
+       "d"."FireAuditTrigger",
+       @NowTimeStamp,
+       @DBAction,
+       @isDeleted
+     FROM deleted AS "d"
+     INNER JOIN inserted AS "i"
+     ON "i"."CountryId" = "d"."CountryId"
+        AND "i"."TransactionNumber" = "d"."TransactionNumber";
+
+     UPDATE "ut"
+     SET "ut"."RowLevelHashKey" = "Hashing"."CreateSha256KeyFromJsonInputLocaleCountry"("i"."CountryId"),
+         "ut"."PriorRowLevelHashKey" = "d"."RowLevelHashKey",
+         "ut"."TransactionNumber" = "d"."TransactionNumber" + 1,
+         "ut"."SysStartTime" = @NowTimeStamp,
+         "ut"."SysEndTime" = @OpenEndedSysEndTime,
+         "ut"."Note" = "i"."Note",
+         "ut"."FireAuditTrigger" = 'N'
+     FROM "Locale"."Country" as "ut"
+       INNER JOIN inserted as "i"
+         ON "i"."CountryId" = "ut"."CountryId"
+           AND "i"."TransactionNumber" = "ut"."TransactionNumber"
+           AND "i"."RowLevelHashKey" = "ut"."RowLevelHashKey"
+       INNER JOIN deleted as "d"
+         ON "i"."CountryId" = "d"."CountryId"
+           AND "i"."TransactionNumber" = "d"."TransactionNumber"
+          AND "i"."RowLevelHashKey" = "d"."RowLevelHashKey"; 
+  END;
+END;
+GO
+
+-- Author: Ralph Granata
+-- Creation Date: 11/30/2023
+-- Modification Date: 11/30/2023
+
+-- Function Name: "Audit"."itvfnFindAllTransactionsByTablePkyOfLocaleCountry" ()
+-- Description: A view to find all transactions by Primary Key
+
+CREATE FUNCTION "Audit"."itvfnFindAllTransactionsByTablePkyOfLocaleCountry" (@Pky int)
+RETURNS TABLE
+AS
+  RETURN 
+  (
+   SELECT 'Current' as TransactionType, NULL AS "AuditDateTimeStamp", NULL AS "DBAction",
+     "d"."CountryId", "d"."CountryISO3", "d"."CountryName", "d"."CountryISO2", "d"."SalesRegion", "d"."TransactionNumber", "d"."Note", "d"."UserAuthorizationId", "d"."SysStartTime", "d"."SysEndTime", "d"."RowLevelHashKey", "d"."PriorRowLevelHashKey", "d"."FireAuditTrigger"
+   FROM "Locale"."Country" AS "d"
+   WHERE "d"."CountryId" = @Pky
+   UNION
+   SELECT 'History' as TransactionType, "d"."AuditDateTimeStamp", "d"."DBAction",
+     "d"."CountryId", "d"."CountryISO3", "d"."CountryName", "d"."CountryISO2", "d"."SalesRegion", "d"."TransactionNumber", "d"."Note", "d"."UserAuthorizationId", "d"."SysStartTime", "d"."SysEndTime", "d"."RowLevelHashKey", "d"."PriorRowLevelHashKey", "d"."FireAuditTrigger"
+   FROM "Audit"."LocaleCountryHistory" as "d"
+   WHERE "d"."CountryId" = @Pky
+  );
+
+go
+
+
 
 -- Author: Ralph Granata
 -- Creation Date: 11/30/2023
@@ -466,6 +449,7 @@ BEGIN
   RETURN HASHBYTES('SHA2_256', @ColumnOutputInJSONIncludingNullValues);
 END;
 go
+
 
 -- View Name: "Audit"."FindUniqueTablePkyProductionManufacturerModel"
 -- Description: TSQL-vwFindUniqueTablePkyView Templated Code plus ProductionManufacturerModel
@@ -573,8 +557,7 @@ BEGIN
   @OpenEndedSysEndTime datetime2(7) = '99991231 23:59:59.9999999',
   @FireAuditTrigger char(1) = 'N',
   @DBAction char(1) = 'U',
-  @isDeleted char(1) = 'N',
-  @UpdatedNote varchar(100) = 'Row Updated';
+  @isDeleted char(1) = 'N';
 
   SELECT @FireAuditTrigger = "i"."FireAuditTrigger"
   FROM deleted as "d"
@@ -614,7 +597,7 @@ BEGIN
          "ut"."TransactionNumber" = "d"."TransactionNumber" + 1,
          "ut"."SysStartTime" = @NowTimeStamp,
          "ut"."SysEndTime" = @OpenEndedSysEndTime,
-         "ut"."Note" = @UpdatedNote,
+         "ut"."Note" = "i"."Note",
          "ut"."FireAuditTrigger" = 'N'
      FROM "Production"."ManufacturerModel" as "ut"
        INNER JOIN inserted as "i"
@@ -653,8 +636,6 @@ AS
   );
 
 go
-
-
 
 
 
@@ -789,8 +770,7 @@ BEGIN
   @OpenEndedSysEndTime datetime2(7) = '99991231 23:59:59.9999999',
   @FireAuditTrigger char(1) = 'N',
   @DBAction char(1) = 'U',
-  @isDeleted char(1) = 'N',
-  @UpdatedNote varchar(100) = 'Row Updated';
+  @isDeleted char(1) = 'N';
 
   SELECT @FireAuditTrigger = "i"."FireAuditTrigger"
   FROM deleted as "d"
@@ -830,7 +810,7 @@ BEGIN
          "ut"."TransactionNumber" = "d"."TransactionNumber" + 1,
          "ut"."SysStartTime" = @NowTimeStamp,
          "ut"."SysEndTime" = @OpenEndedSysEndTime,
-         "ut"."Note" = @UpdatedNote,
+         "ut"."Note" = "i"."Note",
          "ut"."FireAuditTrigger" = 'N'
      FROM "Production"."ManufacturerVehicleMake" as "ut"
        INNER JOIN inserted as "i"
@@ -873,8 +853,6 @@ go
 
 
 
-
-
 -- Author: Ralph Granata
 -- Creation Date: 11/30/2023
 -- Modification Date: 11/30/2023
@@ -898,6 +876,7 @@ BEGIN
   RETURN HASHBYTES('SHA2_256', @ColumnOutputInJSONIncludingNullValues);
 END;
 go
+
 
 -- View Name: "Audit"."FindUniqueTablePkyProductionManufacturerVehicleStock"
 -- Description: TSQL-vwFindUniqueTablePkyView Templated Code plus ProductionManufacturerVehicleStock
@@ -1005,8 +984,7 @@ BEGIN
   @OpenEndedSysEndTime datetime2(7) = '99991231 23:59:59.9999999',
   @FireAuditTrigger char(1) = 'N',
   @DBAction char(1) = 'U',
-  @isDeleted char(1) = 'N',
-  @UpdatedNote varchar(100) = 'Row Updated';
+  @isDeleted char(1) = 'N';
 
   SELECT @FireAuditTrigger = "i"."FireAuditTrigger"
   FROM deleted as "d"
@@ -1046,7 +1024,7 @@ BEGIN
          "ut"."TransactionNumber" = "d"."TransactionNumber" + 1,
          "ut"."SysStartTime" = @NowTimeStamp,
          "ut"."SysEndTime" = @OpenEndedSysEndTime,
-         "ut"."Note" = @UpdatedNote,
+         "ut"."Note" = "i"."Note",
          "ut"."FireAuditTrigger" = 'N'
      FROM "Production"."ManufacturerVehicleStock" as "ut"
        INNER JOIN inserted as "i"
@@ -1089,11 +1067,6 @@ go
 
 
 
-
-
-
-
-
 -- Author: Ralph Granata
 -- Creation Date: 11/30/2023
 -- Modification Date: 11/30/2023
@@ -1117,6 +1090,7 @@ BEGIN
   RETURN HASHBYTES('SHA2_256', @ColumnOutputInJSONIncludingNullValues);
 END;
 go
+
 
 -- View Name: "Audit"."FindUniqueTablePkySalesCustomer"
 -- Description: TSQL-vwFindUniqueTablePkyView Templated Code plus SalesCustomer
@@ -1224,8 +1198,7 @@ BEGIN
   @OpenEndedSysEndTime datetime2(7) = '99991231 23:59:59.9999999',
   @FireAuditTrigger char(1) = 'N',
   @DBAction char(1) = 'U',
-  @isDeleted char(1) = 'N',
-  @UpdatedNote varchar(100) = 'Row Updated';
+  @isDeleted char(1) = 'N';
 
   SELECT @FireAuditTrigger = "i"."FireAuditTrigger"
   FROM deleted as "d"
@@ -1265,7 +1238,7 @@ BEGIN
          "ut"."TransactionNumber" = "d"."TransactionNumber" + 1,
          "ut"."SysStartTime" = @NowTimeStamp,
          "ut"."SysEndTime" = @OpenEndedSysEndTime,
-         "ut"."Note" = @UpdatedNote,
+         "ut"."Note" = "i"."Note",
          "ut"."FireAuditTrigger" = 'N'
      FROM "Sales"."Customer" as "ut"
        INNER JOIN inserted as "i"
@@ -1304,10 +1277,6 @@ AS
   );
 
 go
-
-
-
-
 
 
 
@@ -1442,8 +1411,7 @@ BEGIN
   @OpenEndedSysEndTime datetime2(7) = '99991231 23:59:59.9999999',
   @FireAuditTrigger char(1) = 'N',
   @DBAction char(1) = 'U',
-  @isDeleted char(1) = 'N',
-  @UpdatedNote varchar(100) = 'Row Updated';
+  @isDeleted char(1) = 'N';
 
   SELECT @FireAuditTrigger = "i"."FireAuditTrigger"
   FROM deleted as "d"
@@ -1483,7 +1451,7 @@ BEGIN
          "ut"."TransactionNumber" = "d"."TransactionNumber" + 1,
          "ut"."SysStartTime" = @NowTimeStamp,
          "ut"."SysEndTime" = @OpenEndedSysEndTime,
-         "ut"."Note" = @UpdatedNote,
+         "ut"."Note" = "i"."Note",
          "ut"."FireAuditTrigger" = 'N'
      FROM "Sales"."SalesCategoryThreshold" as "ut"
        INNER JOIN inserted as "i"
@@ -1526,7 +1494,6 @@ go
 
 
 
-
 -- Author: Ralph Granata
 -- Creation Date: 11/30/2023
 -- Modification Date: 11/30/2023
@@ -1550,6 +1517,7 @@ BEGIN
   RETURN HASHBYTES('SHA2_256', @ColumnOutputInJSONIncludingNullValues);
 END;
 go
+
 
 -- View Name: "Audit"."FindUniqueTablePkySalesSalesOrderVehicle"
 -- Description: TSQL-vwFindUniqueTablePkyView Templated Code plus SalesSalesOrderVehicle
@@ -1657,8 +1625,7 @@ BEGIN
   @OpenEndedSysEndTime datetime2(7) = '99991231 23:59:59.9999999',
   @FireAuditTrigger char(1) = 'N',
   @DBAction char(1) = 'U',
-  @isDeleted char(1) = 'N',
-  @UpdatedNote varchar(100) = 'Row Updated';
+  @isDeleted char(1) = 'N';
 
   SELECT @FireAuditTrigger = "i"."FireAuditTrigger"
   FROM deleted as "d"
@@ -1698,7 +1665,7 @@ BEGIN
          "ut"."TransactionNumber" = "d"."TransactionNumber" + 1,
          "ut"."SysStartTime" = @NowTimeStamp,
          "ut"."SysEndTime" = @OpenEndedSysEndTime,
-         "ut"."Note" = @UpdatedNote,
+         "ut"."Note" = "i"."Note",
          "ut"."FireAuditTrigger" = 'N'
      FROM "Sales"."SalesOrderVehicle" as "ut"
        INNER JOIN inserted as "i"
@@ -1737,7 +1704,6 @@ AS
   );
 
 go
-
 
 
 
@@ -1873,8 +1839,7 @@ BEGIN
   @OpenEndedSysEndTime datetime2(7) = '99991231 23:59:59.9999999',
   @FireAuditTrigger char(1) = 'N',
   @DBAction char(1) = 'U',
-  @isDeleted char(1) = 'N',
-  @UpdatedNote varchar(100) = 'Row Updated';
+  @isDeleted char(1) = 'N';
 
   SELECT @FireAuditTrigger = "i"."FireAuditTrigger"
   FROM deleted as "d"
@@ -1914,7 +1879,7 @@ BEGIN
          "ut"."TransactionNumber" = "d"."TransactionNumber" + 1,
          "ut"."SysStartTime" = @NowTimeStamp,
          "ut"."SysEndTime" = @OpenEndedSysEndTime,
-         "ut"."Note" = @UpdatedNote,
+         "ut"."Note" = "i"."Note",
          "ut"."FireAuditTrigger" = 'N'
      FROM "Sales"."SalesOrderVehicleDetail" as "ut"
        INNER JOIN inserted as "i"

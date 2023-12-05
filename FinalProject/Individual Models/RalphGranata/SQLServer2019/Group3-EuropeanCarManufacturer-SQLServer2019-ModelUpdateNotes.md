@@ -56,10 +56,15 @@
 - Merged Chuan's views & updated triggers.
 - Updated view schemas.
 
+# Model Update Notes - 12/04/2023
+- Merged Chuans, Ralphs, Mehrshads custom views.
+- Remade DDL for tables with new views included.
+- Removed hardcoded Note in update triggers.
+
 
 ## TODO:
-- Create a .sql file with all triggers/functions for all tables.  test as you create to check for errors/ buggy table UDPs.
-- Find out how to override erwin triggers with custom ones in FET
-- Create custom views.
+- Test Triggers on all tables
+
+- Create custom views - Remaining: (Jimmy, Ryan, Kenneth, Savaze).
 - Add subject areas.
 - Generate Reports for presentation.

@@ -11,15 +11,19 @@ DECLARE
     column_output_in_json_including_null_values JSONB;
 BEGIN
     SELECT jsonb_build_object(
-      "d"."CountryId", "d"."CountryISO3", "d"."CountryName", "d"."CountryISO2", "d"."SalesRegion", "d"."TransactionNumber", "d"."Note", "d"."UserAuthorizationId", "d"."SysStartTime", "d"."SysEndTime", "d"."RowLevelHashKey", "d"."PriorRowLevelHashKey", "d"."FireAuditTrigger"
+      "CountryId", "d"."CountryId", "CountryISO3", "d"."CountryISO3", "CountryName", "d"."CountryName", "CountryISO2", "d"."CountryISO2", "SalesRegion", "d"."SalesRegion", "TransactionNumber", "d"."TransactionNumber", "Note", "d"."Note", "UserAuthorizationId", "d"."UserAuthorizationId", "SysStartTime", "d"."SysStartTime", "SysEndTime", "d"."SysEndTime", "RowLevelHashKey", "d"."RowLevelHashKey", "PriorRowLevelHashKey", "d"."PriorRowLevelHashKey", "FireAuditTrigger", "d"."FireAuditTrigger", 
+      "AuditDateTimeStamp", "d"."AuditDateTimeStamp", 
+      "DBaction", "d"."DBAction", 
+      "isDeleted", "d"."isDeleted"
     )::TEXT
     INTO column_output_in_json_including_null_values
     FROM "Locale"."Country" as "d"
     WHERE "d"."CountryId" = pky;
 
-    RETURN digest(column_output_in_json_including_null_values, 'sha256');
+    RETURN SHA256(column_output_in_json_including_null_values);
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql
+;
 
 -- Author: Ralph Granata
 -- Creation Date: 12/05/2023
@@ -46,8 +50,10 @@ BEGIN
         FROM "Audit"."LocaleCountryHistory" as "d"
         WHERE "d"."CountryId" = pky
     );
+RETURN;
 end;
 $$LANGUAGE plpgsql;
+;
 
 
 -- View Name: "Audit"."FindUniqueTablePkyLocaleCountry"
@@ -69,44 +75,40 @@ CREATE VIEW "Audit"."vwFindUniqueTablePkyLocaleCountry" AS
 
 -- Description: PG-AuditDeleteTrigger Templated Code
 
-CREATE OR REPLACE FUNCTION delete_LocaleCountry()
+CREATE OR REPLACE FUNCTION "Locale"."funcDeleteCountryHistory"()
 RETURNS TRIGGER
 LANGUAGE plpgsql
-AS $$
-DECLARE
-  now_timestamp TIMESTAMPTZ := current_timestamp;
-  db_action CHAR(1) := 'D';
-  is_deleted CHAR(1) := 'Y';
+AS $function$
+
 BEGIN
-  -- Trigger Code
-  INSERT INTO "Audit"."LocaleCountryHistory"
-  (
-    "d"."CountryId", "d"."CountryISO3", "d"."CountryName", "d"."CountryISO2", "d"."SalesRegion", "d"."TransactionNumber", "d"."Note", "d"."UserAuthorizationId", "d"."SysStartTime", "d"."SysEndTime", "d"."RowLevelHashKey", "d"."PriorRowLevelHashKey", "d"."FireAuditTrigger", "d"."AuditDateTimeStamp", "d"."DBAction", "d"."isDeleted"
-  )
-  SELECT
-    "d"."CountryId", "d"."CountryISO3", "d"."CountryName", "d"."CountryISO2", "d"."SalesRegion",
-    "d"."TransactionNumber",
-    'Last Transaction prior to deletion: ' + coalesce("d"."Note", concat('No Message Transaction Number: ', "d"."TransactionNumber")),
-    "d"."UserAuthorizationId",
-    "d"."SysStartTime",
-    @NowTimeStamp, -- AS SysEndTime
-    "d"."RowLevelHashKey",
-    "d"."PriorRowLevelHashKey",
-    "d"."FireAuditTrigger",
-    @NowTimeStamp,
-    @DBAction,
-    @isDeleted
-  FROM old AS "d";
-
-  RETURN OLD;
+    INSERT INTO "Audit"."LocaleCountryHistory"
+    (
+      "CountryId", "CountryISO3", "CountryName", "CountryISO2", "SalesRegion", "TransactionNumber", "Note", "UserAuthorizationId", "SysStartTime", "SysEndTime", "RowLevelHashKey", "PriorRowLevelHashKey", "FireAuditTrigger", "AuditDateTimeStamp", "DBAction", "IsDeleted"
+    )
+    VALUES(
+      old."CountryId", old."CountryISO3", old."CountryName", old."CountryISO2", old."SalesRegion",
+      old."TransactionNumber",
+      'Row was deleted',
+      old."UserAuthorizationId",
+      old."SysStartTime",
+      now(),
+      old."RowLevelHashKey",
+      old."PriorRowLevelHashKey",
+      old."FireAuditTrigger",
+      now(),
+      'D',
+      'Y'
+    );
+  RETURN NEW;
 END;
-$$;
+$function$
+;
 
-CREATE TRIGGER "Locale_uTd_Country"
+CREATE TRIGGER "uTd_LocaleCountry"
 AFTER DELETE
 ON "Locale"."Country"
 FOR EACH ROW
-EXECUTE FUNCTION delete_LocaleCountry();
+EXECUTE FUNCTION "Locale"."funcDeleteCountryHistory"();
 
 
 -- Author: Ralph Granata
@@ -115,28 +117,29 @@ EXECUTE FUNCTION delete_LocaleCountry();
 -- Trigger Type: After 
 
 -- Description: PG-AuditInsertTrigger Templated Code
-
-CREATE OR REPLACE FUNCTION insert_LocaleCountry()
+CREATE OR REPLACE FUNCTION "Locale"."funcInsertCountryHistory"()
 RETURNS TRIGGER
 LANGUAGE plpgsql
-AS $$
+AS $function$
+
 BEGIN
   IF NEW."TransactionNumber" = 1 THEN
   -- Update the current record hash keys and the temporal range of the transaction of factually being true
-  NEW."RowLevelHashKey" := "Hashing"."CreateSha256KeyFromJsonInputLocaleCountry"(NEW."CountryId");
+  NEW."RowLevelHashKey" := NULL; --"Hashing"."CreateSha256KeyFromJsonInputLocaleCountry"(NEW."CountryId");
   NEW."PriorRowLevelHashKey" := NULL;
   NEW."Note" := 'Row Inserted';
   NEW."FireAuditTrigger" := 'N';
   END IF;
   RETURN NEW;
 END;
-$$;
+$function$
+;
 
-CREATE TRIGGER "Locale_uTi_Country"
+CREATE TRIGGER "uTi_LocaleCountry"
 AFTER INSERT
 ON "Locale"."Country"
 FOR EACH ROW
-EXECUTE FUNCTION insert_LocaleCountry();
+EXECUTE FUNCTION "Locale"."funcInsertCountryHistory"();
 
 
 
@@ -149,74 +152,40 @@ EXECUTE FUNCTION insert_LocaleCountry();
 -- Trigger Type: After 
 
 -- Description: PG-AuditInsertTrigger Templated Code
-
-CREATE OR REPLACE FUNCTION update_LocaleCountry()
+CREATE OR REPLACE FUNCTION "Locale"."funcUpdateCountryHistory"()
 RETURNS TRIGGER
 LANGUAGE plpgsql
-AS $$
-DECLARE
-  now_timestamp TIMESTAMP := current_timestamp;
-  open_ended_sys_end_time TIMESTAMP := '9999-12-31 23:59:59.9999999';
-  fire_audit_trigger CHAR(1) := 'N';
-  db_action CHAR(1) := 'U';
-  is_deleted CHAR(1) := 'N';
-BEGIN
-  -- Retrieve the value of FireAuditTrigger from the inserted record
-  SELECT "i"."FireAuditTrigger"
-  INTO fire_audit_trigger
-  FROM deleted "d"
-  INNER JOIN new "i" ON "i"."CountryId" = "d"."CountryId"
-                    AND "i"."TransactionNumber" = "d"."TransactionNumber";
+AS $function$
 
-  -- Audit only if FireAuditTrigger = 'Y'
-  IF (fire_audit_trigger = 'Y') THEN
-    -- Insert record into audit table
+BEGIN
     INSERT INTO "Audit"."LocaleCountryHistory"
     (
-      "d"."CountryId", "d"."CountryISO3", "d"."CountryName", "d"."CountryISO2", "d"."SalesRegion", "d"."TransactionNumber", "d"."Note", "d"."UserAuthorizationId", "d"."SysStartTime", "d"."SysEndTime", "d"."RowLevelHashKey", "d"."PriorRowLevelHashKey", "d"."FireAuditTrigger", "d"."AuditDateTimeStamp", "d"."DBAction", "d"."isDeleted"
+      "CountryId", "CountryISO3", "CountryName", "CountryISO2", "SalesRegion", "TransactionNumber", "Note", "UserAuthorizationId", "SysStartTime", "SysEndTime", "RowLevelHashKey", "PriorRowLevelHashKey", "FireAuditTrigger", "AuditDateTimeStamp", "DBAction", "IsDeleted"
     )
-    SELECT
-      "d"."CountryId", "d"."CountryISO3", "d"."CountryName", "d"."CountryISO2", "d"."SalesRegion",
-      "d"."TransactionNumber",
-      coalesce("d"."Note", concat('No Message Transaction Number: ', "d"."TransactionNumber")),
-      "d"."UserAuthorizationId",
-      "d"."SysStartTime",
-      now_timestamp,
-      "d"."RowLevelHashKey",
-      "d"."PriorRowLevelHashKey",
-      "d"."FireAuditTrigger"
-    FROM old "d"
-    INNER JOIN new "i" ON "i"."CountryId" = "d"."CountryId"
-                      AND "i"."TransactionNumber" = "d"."TransactionNumber";
-
-    -- Update the target table
-    UPDATE "Locale"."Country" AS "ut"
-    SET
-      "ut"."RowLevelHashKey" = "Hashing"."CreateSha256KeyFromJsonInputLocaleCountry"("i"."CountryId"),
-      "ut"."PriorRowLevelHashKey" = "d"."RowLevelHashKey",
-      "ut"."TransactionNumber" = "d"."TransactionNumber" + 1,
-      "ut"."SysStartTime" = now_timestamp,
-      "ut"."SysEndTime" = open_ended_sys_end_time,
-      "ut"."Note" = "i"."Note",
-      "ut"."FireAuditTrigger" = 'N'
-    FROM new "i"
-    INNER JOIN old "d" ON "i"."CountryId" = "d"."CountryId"
-                        AND "i"."TransactionNumber" = "d"."TransactionNumber"
-                        AND "i"."RowLevelHashKey" = "d"."RowLevelHashKey"
-    WHERE "i"."CountryId" = "ut"."CountryId"
-      AND "i"."TransactionNumber" = "ut"."TransactionNumber"
-      AND "i"."RowLevelHashKey" = "ut"."RowLevelHashKey";
-
-  END IF;
+    VALUES(
+      old."CountryId", old."CountryISO3", old."CountryName", old."CountryISO2", old."SalesRegion",
+      old."TransactionNumber",
+      coalesce(old."Note", concat('No Message Transaction Number: ', old."TransactionNumber")),
+      old."UserAuthorizationId",
+      old."SysStartTime",
+      new."SysStartTime",
+      old."RowLevelHashKey",
+      old."PriorRowLevelHashKey",
+      new."FireAuditTrigger",
+      new."SysStartTime",
+      'U',
+      'N'
+    );
   RETURN NEW;
 END;
-$$;
+$function$
+;
 
-CREATE TRIGGER "Locale_uTu_Country"
+CREATE TRIGGER "uTu_LocaleCountry"
 AFTER UPDATE
 ON "Locale"."Country"
 FOR EACH ROW
-EXECUTE FUNCTION update_LocaleCountry();
+EXECUTE FUNCTION "Locale"."funcUpdateCountryHistory"();
 
 
 
@@ -232,15 +201,19 @@ DECLARE
     column_output_in_json_including_null_values JSONB;
 BEGIN
     SELECT jsonb_build_object(
-      "d"."CustomerId", "d"."CustomerName", "d"."CustomerAddress1", "d"."CustomerAddress2", "d"."CustomerTown", "d"."CustomerPostalCode", "d"."CountryId", "d"."IsCustomerReseller", "d"."IsCustomerCreditRisk", "d"."SpendCapacity", "d"."TransactionNumber", "d"."Note", "d"."UserAuthorizationId", "d"."SysStartTime", "d"."SysEndTime", "d"."RowLevelHashKey", "d"."PriorRowLevelHashKey", "d"."FireAuditTrigger"
+      "CustomerId", "d"."CustomerId", "CustomerName", "d"."CustomerName", "CustomerAddress1", "d"."CustomerAddress1", "CustomerAddress2", "d"."CustomerAddress2", "CustomerTown", "d"."CustomerTown", "CustomerPostalCode", "d"."CustomerPostalCode", "CountryId", "d"."CountryId", "IsCustomerReseller", "d"."IsCustomerReseller", "IsCustomerCreditRisk", "d"."IsCustomerCreditRisk", "SpendCapacity", "d"."SpendCapacity", "TransactionNumber", "d"."TransactionNumber", "Note", "d"."Note", "UserAuthorizationId", "d"."UserAuthorizationId", "SysStartTime", "d"."SysStartTime", "SysEndTime", "d"."SysEndTime", "RowLevelHashKey", "d"."RowLevelHashKey", "PriorRowLevelHashKey", "d"."PriorRowLevelHashKey", "FireAuditTrigger", "d"."FireAuditTrigger", 
+      "AuditDateTimeStamp", "d"."AuditDateTimeStamp", 
+      "DBaction", "d"."DBAction", 
+      "isDeleted", "d"."isDeleted"
     )::TEXT
     INTO column_output_in_json_including_null_values
     FROM "Sales"."Customer" as "d"
     WHERE "d"."CustomerId" = pky;
 
-    RETURN digest(column_output_in_json_including_null_values, 'sha256');
+    RETURN SHA256(column_output_in_json_including_null_values);
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql
+;
 
 -- Author: Ralph Granata
 -- Creation Date: 12/05/2023
@@ -267,8 +240,10 @@ BEGIN
         FROM "Audit"."SalesCustomerHistory" as "d"
         WHERE "d"."CustomerId" = pky
     );
+RETURN;
 end;
 $$LANGUAGE plpgsql;
+;
 
 
 -- View Name: "Audit"."FindUniqueTablePkySalesCustomer"
@@ -290,44 +265,40 @@ CREATE VIEW "Audit"."vwFindUniqueTablePkySalesCustomer" AS
 
 -- Description: PG-AuditDeleteTrigger Templated Code
 
-CREATE OR REPLACE FUNCTION delete_SalesCustomer()
+CREATE OR REPLACE FUNCTION "Sales"."funcDeleteCustomerHistory"()
 RETURNS TRIGGER
 LANGUAGE plpgsql
-AS $$
-DECLARE
-  now_timestamp TIMESTAMPTZ := current_timestamp;
-  db_action CHAR(1) := 'D';
-  is_deleted CHAR(1) := 'Y';
+AS $function$
+
 BEGIN
-  -- Trigger Code
-  INSERT INTO "Audit"."SalesCustomerHistory"
-  (
-    "d"."CustomerId", "d"."CustomerName", "d"."CustomerAddress1", "d"."CustomerAddress2", "d"."CustomerTown", "d"."CustomerPostalCode", "d"."CountryId", "d"."IsCustomerReseller", "d"."IsCustomerCreditRisk", "d"."SpendCapacity", "d"."TransactionNumber", "d"."Note", "d"."UserAuthorizationId", "d"."SysStartTime", "d"."SysEndTime", "d"."RowLevelHashKey", "d"."PriorRowLevelHashKey", "d"."FireAuditTrigger", "d"."AuditDateTimeStamp", "d"."DBAction", "d"."isDeleted"
-  )
-  SELECT
-    "d"."CustomerId", "d"."CustomerName", "d"."CustomerAddress1", "d"."CustomerAddress2", "d"."CustomerTown", "d"."CustomerPostalCode", "d"."CountryId", "d"."IsCustomerReseller", "d"."IsCustomerCreditRisk", "d"."SpendCapacity",
-    "d"."TransactionNumber",
-    'Last Transaction prior to deletion: ' + coalesce("d"."Note", concat('No Message Transaction Number: ', "d"."TransactionNumber")),
-    "d"."UserAuthorizationId",
-    "d"."SysStartTime",
-    @NowTimeStamp, -- AS SysEndTime
-    "d"."RowLevelHashKey",
-    "d"."PriorRowLevelHashKey",
-    "d"."FireAuditTrigger",
-    @NowTimeStamp,
-    @DBAction,
-    @isDeleted
-  FROM old AS "d";
-
-  RETURN OLD;
+    INSERT INTO "Audit"."SalesCustomerHistory"
+    (
+      "CustomerId", "CustomerName", "CustomerAddress1", "CustomerAddress2", "CustomerTown", "CustomerPostalCode", "CountryId", "IsCustomerReseller", "IsCustomerCreditRisk", "SpendCapacity", "TransactionNumber", "Note", "UserAuthorizationId", "SysStartTime", "SysEndTime", "RowLevelHashKey", "PriorRowLevelHashKey", "FireAuditTrigger", "AuditDateTimeStamp", "DBAction", "IsDeleted"
+    )
+    VALUES(
+      old."CustomerId", old."CustomerName", old."CustomerAddress1", old."CustomerAddress2", old."CustomerTown", old."CustomerPostalCode", old."CountryId", old."IsCustomerReseller", old."IsCustomerCreditRisk", old."SpendCapacity",
+      old."TransactionNumber",
+      'Row was deleted',
+      old."UserAuthorizationId",
+      old."SysStartTime",
+      now(),
+      old."RowLevelHashKey",
+      old."PriorRowLevelHashKey",
+      old."FireAuditTrigger",
+      now(),
+      'D',
+      'Y'
+    );
+  RETURN NEW;
 END;
-$$;
+$function$
+;
 
-CREATE TRIGGER "Sales_uTd_Customer"
+CREATE TRIGGER "uTd_SalesCustomer"
 AFTER DELETE
 ON "Sales"."Customer"
 FOR EACH ROW
-EXECUTE FUNCTION delete_SalesCustomer();
+EXECUTE FUNCTION "Sales"."funcDeleteCustomerHistory"();
 
 
 -- Author: Ralph Granata
@@ -336,28 +307,29 @@ EXECUTE FUNCTION delete_SalesCustomer();
 -- Trigger Type: After 
 
 -- Description: PG-AuditInsertTrigger Templated Code
-
-CREATE OR REPLACE FUNCTION insert_SalesCustomer()
+CREATE OR REPLACE FUNCTION "Sales"."funcInsertCustomerHistory"()
 RETURNS TRIGGER
 LANGUAGE plpgsql
-AS $$
+AS $function$
+
 BEGIN
   IF NEW."TransactionNumber" = 1 THEN
   -- Update the current record hash keys and the temporal range of the transaction of factually being true
-  NEW."RowLevelHashKey" := "Hashing"."CreateSha256KeyFromJsonInputSalesCustomer"(NEW."CustomerId");
+  NEW."RowLevelHashKey" := NULL; --"Hashing"."CreateSha256KeyFromJsonInputSalesCustomer"(NEW."CustomerId");
   NEW."PriorRowLevelHashKey" := NULL;
   NEW."Note" := 'Row Inserted';
   NEW."FireAuditTrigger" := 'N';
   END IF;
   RETURN NEW;
 END;
-$$;
+$function$
+;
 
-CREATE TRIGGER "Sales_uTi_Customer"
+CREATE TRIGGER "uTi_SalesCustomer"
 AFTER INSERT
 ON "Sales"."Customer"
 FOR EACH ROW
-EXECUTE FUNCTION insert_SalesCustomer();
+EXECUTE FUNCTION "Sales"."funcInsertCustomerHistory"();
 
 
 
@@ -370,74 +342,40 @@ EXECUTE FUNCTION insert_SalesCustomer();
 -- Trigger Type: After 
 
 -- Description: PG-AuditInsertTrigger Templated Code
-
-CREATE OR REPLACE FUNCTION update_SalesCustomer()
+CREATE OR REPLACE FUNCTION "Sales"."funcUpdateCustomerHistory"()
 RETURNS TRIGGER
 LANGUAGE plpgsql
-AS $$
-DECLARE
-  now_timestamp TIMESTAMP := current_timestamp;
-  open_ended_sys_end_time TIMESTAMP := '9999-12-31 23:59:59.9999999';
-  fire_audit_trigger CHAR(1) := 'N';
-  db_action CHAR(1) := 'U';
-  is_deleted CHAR(1) := 'N';
-BEGIN
-  -- Retrieve the value of FireAuditTrigger from the inserted record
-  SELECT "i"."FireAuditTrigger"
-  INTO fire_audit_trigger
-  FROM deleted "d"
-  INNER JOIN new "i" ON "i"."CustomerId" = "d"."CustomerId"
-                    AND "i"."TransactionNumber" = "d"."TransactionNumber";
+AS $function$
 
-  -- Audit only if FireAuditTrigger = 'Y'
-  IF (fire_audit_trigger = 'Y') THEN
-    -- Insert record into audit table
+BEGIN
     INSERT INTO "Audit"."SalesCustomerHistory"
     (
-      "d"."CustomerId", "d"."CustomerName", "d"."CustomerAddress1", "d"."CustomerAddress2", "d"."CustomerTown", "d"."CustomerPostalCode", "d"."CountryId", "d"."IsCustomerReseller", "d"."IsCustomerCreditRisk", "d"."SpendCapacity", "d"."TransactionNumber", "d"."Note", "d"."UserAuthorizationId", "d"."SysStartTime", "d"."SysEndTime", "d"."RowLevelHashKey", "d"."PriorRowLevelHashKey", "d"."FireAuditTrigger", "d"."AuditDateTimeStamp", "d"."DBAction", "d"."isDeleted"
+      "CustomerId", "CustomerName", "CustomerAddress1", "CustomerAddress2", "CustomerTown", "CustomerPostalCode", "CountryId", "IsCustomerReseller", "IsCustomerCreditRisk", "SpendCapacity", "TransactionNumber", "Note", "UserAuthorizationId", "SysStartTime", "SysEndTime", "RowLevelHashKey", "PriorRowLevelHashKey", "FireAuditTrigger", "AuditDateTimeStamp", "DBAction", "IsDeleted"
     )
-    SELECT
-      "d"."CustomerId", "d"."CustomerName", "d"."CustomerAddress1", "d"."CustomerAddress2", "d"."CustomerTown", "d"."CustomerPostalCode", "d"."CountryId", "d"."IsCustomerReseller", "d"."IsCustomerCreditRisk", "d"."SpendCapacity",
-      "d"."TransactionNumber",
-      coalesce("d"."Note", concat('No Message Transaction Number: ', "d"."TransactionNumber")),
-      "d"."UserAuthorizationId",
-      "d"."SysStartTime",
-      now_timestamp,
-      "d"."RowLevelHashKey",
-      "d"."PriorRowLevelHashKey",
-      "d"."FireAuditTrigger"
-    FROM old "d"
-    INNER JOIN new "i" ON "i"."CustomerId" = "d"."CustomerId"
-                      AND "i"."TransactionNumber" = "d"."TransactionNumber";
-
-    -- Update the target table
-    UPDATE "Sales"."Customer" AS "ut"
-    SET
-      "ut"."RowLevelHashKey" = "Hashing"."CreateSha256KeyFromJsonInputSalesCustomer"("i"."CustomerId"),
-      "ut"."PriorRowLevelHashKey" = "d"."RowLevelHashKey",
-      "ut"."TransactionNumber" = "d"."TransactionNumber" + 1,
-      "ut"."SysStartTime" = now_timestamp,
-      "ut"."SysEndTime" = open_ended_sys_end_time,
-      "ut"."Note" = "i"."Note",
-      "ut"."FireAuditTrigger" = 'N'
-    FROM new "i"
-    INNER JOIN old "d" ON "i"."CustomerId" = "d"."CustomerId"
-                        AND "i"."TransactionNumber" = "d"."TransactionNumber"
-                        AND "i"."RowLevelHashKey" = "d"."RowLevelHashKey"
-    WHERE "i"."CustomerId" = "ut"."CustomerId"
-      AND "i"."TransactionNumber" = "ut"."TransactionNumber"
-      AND "i"."RowLevelHashKey" = "ut"."RowLevelHashKey";
-
-  END IF;
+    VALUES(
+      old."CustomerId", old."CustomerName", old."CustomerAddress1", old."CustomerAddress2", old."CustomerTown", old."CustomerPostalCode", old."CountryId", old."IsCustomerReseller", old."IsCustomerCreditRisk", old."SpendCapacity",
+      old."TransactionNumber",
+      coalesce(old."Note", concat('No Message Transaction Number: ', old."TransactionNumber")),
+      old."UserAuthorizationId",
+      old."SysStartTime",
+      new."SysStartTime",
+      old."RowLevelHashKey",
+      old."PriorRowLevelHashKey",
+      new."FireAuditTrigger",
+      new."SysStartTime",
+      'U',
+      'N'
+    );
   RETURN NEW;
 END;
-$$;
+$function$
+;
 
-CREATE TRIGGER "Sales_uTu_Customer"
+CREATE TRIGGER "uTu_SalesCustomer"
 AFTER UPDATE
 ON "Sales"."Customer"
 FOR EACH ROW
-EXECUTE FUNCTION update_SalesCustomer();
+EXECUTE FUNCTION "Sales"."funcUpdateCustomerHistory"();
 
 
 
@@ -453,15 +391,19 @@ DECLARE
     column_output_in_json_including_null_values JSONB;
 BEGIN
     SELECT jsonb_build_object(
-      "d"."ManufacturerModelId", "d"."ManufacturerVehicleMakeId", "d"."ManufacturerModelName", "d"."ManufacturerModelVariant", "d"."TransactionNumber", "d"."Note", "d"."UserAuthorizationId", "d"."SysStartTime", "d"."SysEndTime", "d"."RowLevelHashKey", "d"."PriorRowLevelHashKey", "d"."FireAuditTrigger"
+      "ManufacturerModelId", "d"."ManufacturerModelId", "ManufacturerVehicleMakeId", "d"."ManufacturerVehicleMakeId", "ManufacturerModelName", "d"."ManufacturerModelName", "ManufacturerModelVariant", "d"."ManufacturerModelVariant", "TransactionNumber", "d"."TransactionNumber", "Note", "d"."Note", "UserAuthorizationId", "d"."UserAuthorizationId", "SysStartTime", "d"."SysStartTime", "SysEndTime", "d"."SysEndTime", "RowLevelHashKey", "d"."RowLevelHashKey", "PriorRowLevelHashKey", "d"."PriorRowLevelHashKey", "FireAuditTrigger", "d"."FireAuditTrigger", 
+      "AuditDateTimeStamp", "d"."AuditDateTimeStamp", 
+      "DBaction", "d"."DBAction", 
+      "isDeleted", "d"."isDeleted"
     )::TEXT
     INTO column_output_in_json_including_null_values
     FROM "Production"."ManufacturerModel" as "d"
     WHERE "d"."ManufacturerModelId" = pky;
 
-    RETURN digest(column_output_in_json_including_null_values, 'sha256');
+    RETURN SHA256(column_output_in_json_including_null_values);
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql
+;
 
 -- Author: Ralph Granata
 -- Creation Date: 12/05/2023
@@ -488,8 +430,10 @@ BEGIN
         FROM "Audit"."ProductionManufacturerModelHistory" as "d"
         WHERE "d"."ManufacturerModelId" = pky
     );
+RETURN;
 end;
 $$LANGUAGE plpgsql;
+;
 
 
 -- View Name: "Audit"."FindUniqueTablePkyProductionManufacturerModel"
@@ -511,44 +455,40 @@ CREATE VIEW "Audit"."vwFindUniqueTablePkyProductionManufacturerModel" AS
 
 -- Description: PG-AuditDeleteTrigger Templated Code
 
-CREATE OR REPLACE FUNCTION delete_ProductionManufacturerModel()
+CREATE OR REPLACE FUNCTION "Production"."funcDeleteManufacturerModelHistory"()
 RETURNS TRIGGER
 LANGUAGE plpgsql
-AS $$
-DECLARE
-  now_timestamp TIMESTAMPTZ := current_timestamp;
-  db_action CHAR(1) := 'D';
-  is_deleted CHAR(1) := 'Y';
+AS $function$
+
 BEGIN
-  -- Trigger Code
-  INSERT INTO "Audit"."ProductionManufacturerModelHistory"
-  (
-    "d"."ManufacturerModelId", "d"."ManufacturerVehicleMakeId", "d"."ManufacturerModelName", "d"."ManufacturerModelVariant", "d"."TransactionNumber", "d"."Note", "d"."UserAuthorizationId", "d"."SysStartTime", "d"."SysEndTime", "d"."RowLevelHashKey", "d"."PriorRowLevelHashKey", "d"."FireAuditTrigger", "d"."AuditDateTimeStamp", "d"."DBAction", "d"."isDeleted"
-  )
-  SELECT
-    "d"."ManufacturerModelId", "d"."ManufacturerVehicleMakeId", "d"."ManufacturerModelName", "d"."ManufacturerModelVariant",
-    "d"."TransactionNumber",
-    'Last Transaction prior to deletion: ' + coalesce("d"."Note", concat('No Message Transaction Number: ', "d"."TransactionNumber")),
-    "d"."UserAuthorizationId",
-    "d"."SysStartTime",
-    @NowTimeStamp, -- AS SysEndTime
-    "d"."RowLevelHashKey",
-    "d"."PriorRowLevelHashKey",
-    "d"."FireAuditTrigger",
-    @NowTimeStamp,
-    @DBAction,
-    @isDeleted
-  FROM old AS "d";
-
-  RETURN OLD;
+    INSERT INTO "Audit"."ProductionManufacturerModelHistory"
+    (
+      "ManufacturerModelId", "ManufacturerVehicleMakeId", "ManufacturerModelName", "ManufacturerModelVariant", "TransactionNumber", "Note", "UserAuthorizationId", "SysStartTime", "SysEndTime", "RowLevelHashKey", "PriorRowLevelHashKey", "FireAuditTrigger", "AuditDateTimeStamp", "DBAction", "IsDeleted"
+    )
+    VALUES(
+      old."ManufacturerModelId", old."ManufacturerVehicleMakeId", old."ManufacturerModelName", old."ManufacturerModelVariant",
+      old."TransactionNumber",
+      'Row was deleted',
+      old."UserAuthorizationId",
+      old."SysStartTime",
+      now(),
+      old."RowLevelHashKey",
+      old."PriorRowLevelHashKey",
+      old."FireAuditTrigger",
+      now(),
+      'D',
+      'Y'
+    );
+  RETURN NEW;
 END;
-$$;
+$function$
+;
 
-CREATE TRIGGER "Production_uTd_ManufacturerModel"
+CREATE TRIGGER "uTd_ProductionManufacturerModel"
 AFTER DELETE
 ON "Production"."ManufacturerModel"
 FOR EACH ROW
-EXECUTE FUNCTION delete_ProductionManufacturerModel();
+EXECUTE FUNCTION "Production"."funcDeleteManufacturerModelHistory"();
 
 
 -- Author: Ralph Granata
@@ -557,28 +497,29 @@ EXECUTE FUNCTION delete_ProductionManufacturerModel();
 -- Trigger Type: After 
 
 -- Description: PG-AuditInsertTrigger Templated Code
-
-CREATE OR REPLACE FUNCTION insert_ProductionManufacturerModel()
+CREATE OR REPLACE FUNCTION "Production"."funcInsertManufacturerModelHistory"()
 RETURNS TRIGGER
 LANGUAGE plpgsql
-AS $$
+AS $function$
+
 BEGIN
   IF NEW."TransactionNumber" = 1 THEN
   -- Update the current record hash keys and the temporal range of the transaction of factually being true
-  NEW."RowLevelHashKey" := "Hashing"."CreateSha256KeyFromJsonInputProductionManufacturerModel"(NEW."ManufacturerModelId");
+  NEW."RowLevelHashKey" := NULL; --"Hashing"."CreateSha256KeyFromJsonInputProductionManufacturerModel"(NEW."ManufacturerModelId");
   NEW."PriorRowLevelHashKey" := NULL;
   NEW."Note" := 'Row Inserted';
   NEW."FireAuditTrigger" := 'N';
   END IF;
   RETURN NEW;
 END;
-$$;
+$function$
+;
 
-CREATE TRIGGER "Production_uTi_ManufacturerModel"
+CREATE TRIGGER "uTi_ProductionManufacturerModel"
 AFTER INSERT
 ON "Production"."ManufacturerModel"
 FOR EACH ROW
-EXECUTE FUNCTION insert_ProductionManufacturerModel();
+EXECUTE FUNCTION "Production"."funcInsertManufacturerModelHistory"();
 
 
 
@@ -591,74 +532,40 @@ EXECUTE FUNCTION insert_ProductionManufacturerModel();
 -- Trigger Type: After 
 
 -- Description: PG-AuditInsertTrigger Templated Code
-
-CREATE OR REPLACE FUNCTION update_ProductionManufacturerModel()
+CREATE OR REPLACE FUNCTION "Production"."funcUpdateManufacturerModelHistory"()
 RETURNS TRIGGER
 LANGUAGE plpgsql
-AS $$
-DECLARE
-  now_timestamp TIMESTAMP := current_timestamp;
-  open_ended_sys_end_time TIMESTAMP := '9999-12-31 23:59:59.9999999';
-  fire_audit_trigger CHAR(1) := 'N';
-  db_action CHAR(1) := 'U';
-  is_deleted CHAR(1) := 'N';
-BEGIN
-  -- Retrieve the value of FireAuditTrigger from the inserted record
-  SELECT "i"."FireAuditTrigger"
-  INTO fire_audit_trigger
-  FROM deleted "d"
-  INNER JOIN new "i" ON "i"."ManufacturerModelId" = "d"."ManufacturerModelId"
-                    AND "i"."TransactionNumber" = "d"."TransactionNumber";
+AS $function$
 
-  -- Audit only if FireAuditTrigger = 'Y'
-  IF (fire_audit_trigger = 'Y') THEN
-    -- Insert record into audit table
+BEGIN
     INSERT INTO "Audit"."ProductionManufacturerModelHistory"
     (
-      "d"."ManufacturerModelId", "d"."ManufacturerVehicleMakeId", "d"."ManufacturerModelName", "d"."ManufacturerModelVariant", "d"."TransactionNumber", "d"."Note", "d"."UserAuthorizationId", "d"."SysStartTime", "d"."SysEndTime", "d"."RowLevelHashKey", "d"."PriorRowLevelHashKey", "d"."FireAuditTrigger", "d"."AuditDateTimeStamp", "d"."DBAction", "d"."isDeleted"
+      "ManufacturerModelId", "ManufacturerVehicleMakeId", "ManufacturerModelName", "ManufacturerModelVariant", "TransactionNumber", "Note", "UserAuthorizationId", "SysStartTime", "SysEndTime", "RowLevelHashKey", "PriorRowLevelHashKey", "FireAuditTrigger", "AuditDateTimeStamp", "DBAction", "IsDeleted"
     )
-    SELECT
-      "d"."ManufacturerModelId", "d"."ManufacturerVehicleMakeId", "d"."ManufacturerModelName", "d"."ManufacturerModelVariant",
-      "d"."TransactionNumber",
-      coalesce("d"."Note", concat('No Message Transaction Number: ', "d"."TransactionNumber")),
-      "d"."UserAuthorizationId",
-      "d"."SysStartTime",
-      now_timestamp,
-      "d"."RowLevelHashKey",
-      "d"."PriorRowLevelHashKey",
-      "d"."FireAuditTrigger"
-    FROM old "d"
-    INNER JOIN new "i" ON "i"."ManufacturerModelId" = "d"."ManufacturerModelId"
-                      AND "i"."TransactionNumber" = "d"."TransactionNumber";
-
-    -- Update the target table
-    UPDATE "Production"."ManufacturerModel" AS "ut"
-    SET
-      "ut"."RowLevelHashKey" = "Hashing"."CreateSha256KeyFromJsonInputProductionManufacturerModel"("i"."ManufacturerModelId"),
-      "ut"."PriorRowLevelHashKey" = "d"."RowLevelHashKey",
-      "ut"."TransactionNumber" = "d"."TransactionNumber" + 1,
-      "ut"."SysStartTime" = now_timestamp,
-      "ut"."SysEndTime" = open_ended_sys_end_time,
-      "ut"."Note" = "i"."Note",
-      "ut"."FireAuditTrigger" = 'N'
-    FROM new "i"
-    INNER JOIN old "d" ON "i"."ManufacturerModelId" = "d"."ManufacturerModelId"
-                        AND "i"."TransactionNumber" = "d"."TransactionNumber"
-                        AND "i"."RowLevelHashKey" = "d"."RowLevelHashKey"
-    WHERE "i"."ManufacturerModelId" = "ut"."ManufacturerModelId"
-      AND "i"."TransactionNumber" = "ut"."TransactionNumber"
-      AND "i"."RowLevelHashKey" = "ut"."RowLevelHashKey";
-
-  END IF;
+    VALUES(
+      old."ManufacturerModelId", old."ManufacturerVehicleMakeId", old."ManufacturerModelName", old."ManufacturerModelVariant",
+      old."TransactionNumber",
+      coalesce(old."Note", concat('No Message Transaction Number: ', old."TransactionNumber")),
+      old."UserAuthorizationId",
+      old."SysStartTime",
+      new."SysStartTime",
+      old."RowLevelHashKey",
+      old."PriorRowLevelHashKey",
+      new."FireAuditTrigger",
+      new."SysStartTime",
+      'U',
+      'N'
+    );
   RETURN NEW;
 END;
-$$;
+$function$
+;
 
-CREATE TRIGGER "Production_uTu_ManufacturerModel"
+CREATE TRIGGER "uTu_ProductionManufacturerModel"
 AFTER UPDATE
 ON "Production"."ManufacturerModel"
 FOR EACH ROW
-EXECUTE FUNCTION update_ProductionManufacturerModel();
+EXECUTE FUNCTION "Production"."funcUpdateManufacturerModelHistory"();
 
 
 
@@ -674,15 +581,19 @@ DECLARE
     column_output_in_json_including_null_values JSONB;
 BEGIN
     SELECT jsonb_build_object(
-      "d"."ManufacturerVehicleMakeId", "d"."ManufacturerVehicleMakeName", "d"."CountryId", "d"."MarketingType", "d"."TransactionNumber", "d"."Note", "d"."UserAuthorizationId", "d"."SysStartTime", "d"."SysEndTime", "d"."RowLevelHashKey", "d"."PriorRowLevelHashKey", "d"."FireAuditTrigger"
+      "ManufacturerVehicleMakeId", "d"."ManufacturerVehicleMakeId", "ManufacturerVehicleMakeName", "d"."ManufacturerVehicleMakeName", "CountryId", "d"."CountryId", "MarketingType", "d"."MarketingType", "TransactionNumber", "d"."TransactionNumber", "Note", "d"."Note", "UserAuthorizationId", "d"."UserAuthorizationId", "SysStartTime", "d"."SysStartTime", "SysEndTime", "d"."SysEndTime", "RowLevelHashKey", "d"."RowLevelHashKey", "PriorRowLevelHashKey", "d"."PriorRowLevelHashKey", "FireAuditTrigger", "d"."FireAuditTrigger", 
+      "AuditDateTimeStamp", "d"."AuditDateTimeStamp", 
+      "DBaction", "d"."DBAction", 
+      "isDeleted", "d"."isDeleted"
     )::TEXT
     INTO column_output_in_json_including_null_values
     FROM "Production"."ManufacturerVehicleMake" as "d"
     WHERE "d"."ManufacturerVehicleMakeId" = pky;
 
-    RETURN digest(column_output_in_json_including_null_values, 'sha256');
+    RETURN SHA256(column_output_in_json_including_null_values);
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql
+;
 
 -- Author: Ralph Granata
 -- Creation Date: 12/05/2023
@@ -709,8 +620,10 @@ BEGIN
         FROM "Audit"."ProductionManufacturerVehicleMakeHistory" as "d"
         WHERE "d"."ManufacturerVehicleMakeId" = pky
     );
+RETURN;
 end;
 $$LANGUAGE plpgsql;
+;
 
 
 -- View Name: "Audit"."FindUniqueTablePkyProductionManufacturerVehicleMake"
@@ -732,44 +645,40 @@ CREATE VIEW "Audit"."vwFindUniqueTablePkyProductionManufacturerVehicleMake" AS
 
 -- Description: PG-AuditDeleteTrigger Templated Code
 
-CREATE OR REPLACE FUNCTION delete_ProductionManufacturerVehicleMake()
+CREATE OR REPLACE FUNCTION "Production"."funcDeleteManufacturerVehicleMakeHistory"()
 RETURNS TRIGGER
 LANGUAGE plpgsql
-AS $$
-DECLARE
-  now_timestamp TIMESTAMPTZ := current_timestamp;
-  db_action CHAR(1) := 'D';
-  is_deleted CHAR(1) := 'Y';
+AS $function$
+
 BEGIN
-  -- Trigger Code
-  INSERT INTO "Audit"."ProductionManufacturerVehicleMakeHistory"
-  (
-    "d"."ManufacturerVehicleMakeId", "d"."ManufacturerVehicleMakeName", "d"."CountryId", "d"."MarketingType", "d"."TransactionNumber", "d"."Note", "d"."UserAuthorizationId", "d"."SysStartTime", "d"."SysEndTime", "d"."RowLevelHashKey", "d"."PriorRowLevelHashKey", "d"."FireAuditTrigger", "d"."AuditDateTimeStamp", "d"."DBAction", "d"."isDeleted"
-  )
-  SELECT
-    "d"."ManufacturerVehicleMakeId", "d"."ManufacturerVehicleMakeName", "d"."CountryId", "d"."MarketingType",
-    "d"."TransactionNumber",
-    'Last Transaction prior to deletion: ' + coalesce("d"."Note", concat('No Message Transaction Number: ', "d"."TransactionNumber")),
-    "d"."UserAuthorizationId",
-    "d"."SysStartTime",
-    @NowTimeStamp, -- AS SysEndTime
-    "d"."RowLevelHashKey",
-    "d"."PriorRowLevelHashKey",
-    "d"."FireAuditTrigger",
-    @NowTimeStamp,
-    @DBAction,
-    @isDeleted
-  FROM old AS "d";
-
-  RETURN OLD;
+    INSERT INTO "Audit"."ProductionManufacturerVehicleMakeHistory"
+    (
+      "ManufacturerVehicleMakeId", "ManufacturerVehicleMakeName", "CountryId", "MarketingType", "TransactionNumber", "Note", "UserAuthorizationId", "SysStartTime", "SysEndTime", "RowLevelHashKey", "PriorRowLevelHashKey", "FireAuditTrigger", "AuditDateTimeStamp", "DBAction", "IsDeleted"
+    )
+    VALUES(
+      old."ManufacturerVehicleMakeId", old."ManufacturerVehicleMakeName", old."CountryId", old."MarketingType",
+      old."TransactionNumber",
+      'Row was deleted',
+      old."UserAuthorizationId",
+      old."SysStartTime",
+      now(),
+      old."RowLevelHashKey",
+      old."PriorRowLevelHashKey",
+      old."FireAuditTrigger",
+      now(),
+      'D',
+      'Y'
+    );
+  RETURN NEW;
 END;
-$$;
+$function$
+;
 
-CREATE TRIGGER "Production_uTd_ManufacturerVehicleMake"
+CREATE TRIGGER "uTd_ProductionManufacturerVehicleMake"
 AFTER DELETE
 ON "Production"."ManufacturerVehicleMake"
 FOR EACH ROW
-EXECUTE FUNCTION delete_ProductionManufacturerVehicleMake();
+EXECUTE FUNCTION "Production"."funcDeleteManufacturerVehicleMakeHistory"();
 
 
 -- Author: Ralph Granata
@@ -778,28 +687,29 @@ EXECUTE FUNCTION delete_ProductionManufacturerVehicleMake();
 -- Trigger Type: After 
 
 -- Description: PG-AuditInsertTrigger Templated Code
-
-CREATE OR REPLACE FUNCTION insert_ProductionManufacturerVehicleMake()
+CREATE OR REPLACE FUNCTION "Production"."funcInsertManufacturerVehicleMakeHistory"()
 RETURNS TRIGGER
 LANGUAGE plpgsql
-AS $$
+AS $function$
+
 BEGIN
   IF NEW."TransactionNumber" = 1 THEN
   -- Update the current record hash keys and the temporal range of the transaction of factually being true
-  NEW."RowLevelHashKey" := "Hashing"."CreateSha256KeyFromJsonInputProductionManufacturerVehicleMake"(NEW."ManufacturerVehicleMakeId");
+  NEW."RowLevelHashKey" := NULL; --"Hashing"."CreateSha256KeyFromJsonInputProductionManufacturerVehicleMake"(NEW."ManufacturerVehicleMakeId");
   NEW."PriorRowLevelHashKey" := NULL;
   NEW."Note" := 'Row Inserted';
   NEW."FireAuditTrigger" := 'N';
   END IF;
   RETURN NEW;
 END;
-$$;
+$function$
+;
 
-CREATE TRIGGER "Production_uTi_ManufacturerVehicleMake"
+CREATE TRIGGER "uTi_ProductionManufacturerVehicleMake"
 AFTER INSERT
 ON "Production"."ManufacturerVehicleMake"
 FOR EACH ROW
-EXECUTE FUNCTION insert_ProductionManufacturerVehicleMake();
+EXECUTE FUNCTION "Production"."funcInsertManufacturerVehicleMakeHistory"();
 
 
 
@@ -812,74 +722,40 @@ EXECUTE FUNCTION insert_ProductionManufacturerVehicleMake();
 -- Trigger Type: After 
 
 -- Description: PG-AuditInsertTrigger Templated Code
-
-CREATE OR REPLACE FUNCTION update_ProductionManufacturerVehicleMake()
+CREATE OR REPLACE FUNCTION "Production"."funcUpdateManufacturerVehicleMakeHistory"()
 RETURNS TRIGGER
 LANGUAGE plpgsql
-AS $$
-DECLARE
-  now_timestamp TIMESTAMP := current_timestamp;
-  open_ended_sys_end_time TIMESTAMP := '9999-12-31 23:59:59.9999999';
-  fire_audit_trigger CHAR(1) := 'N';
-  db_action CHAR(1) := 'U';
-  is_deleted CHAR(1) := 'N';
-BEGIN
-  -- Retrieve the value of FireAuditTrigger from the inserted record
-  SELECT "i"."FireAuditTrigger"
-  INTO fire_audit_trigger
-  FROM deleted "d"
-  INNER JOIN new "i" ON "i"."ManufacturerVehicleMakeId" = "d"."ManufacturerVehicleMakeId"
-                    AND "i"."TransactionNumber" = "d"."TransactionNumber";
+AS $function$
 
-  -- Audit only if FireAuditTrigger = 'Y'
-  IF (fire_audit_trigger = 'Y') THEN
-    -- Insert record into audit table
+BEGIN
     INSERT INTO "Audit"."ProductionManufacturerVehicleMakeHistory"
     (
-      "d"."ManufacturerVehicleMakeId", "d"."ManufacturerVehicleMakeName", "d"."CountryId", "d"."MarketingType", "d"."TransactionNumber", "d"."Note", "d"."UserAuthorizationId", "d"."SysStartTime", "d"."SysEndTime", "d"."RowLevelHashKey", "d"."PriorRowLevelHashKey", "d"."FireAuditTrigger", "d"."AuditDateTimeStamp", "d"."DBAction", "d"."isDeleted"
+      "ManufacturerVehicleMakeId", "ManufacturerVehicleMakeName", "CountryId", "MarketingType", "TransactionNumber", "Note", "UserAuthorizationId", "SysStartTime", "SysEndTime", "RowLevelHashKey", "PriorRowLevelHashKey", "FireAuditTrigger", "AuditDateTimeStamp", "DBAction", "IsDeleted"
     )
-    SELECT
-      "d"."ManufacturerVehicleMakeId", "d"."ManufacturerVehicleMakeName", "d"."CountryId", "d"."MarketingType",
-      "d"."TransactionNumber",
-      coalesce("d"."Note", concat('No Message Transaction Number: ', "d"."TransactionNumber")),
-      "d"."UserAuthorizationId",
-      "d"."SysStartTime",
-      now_timestamp,
-      "d"."RowLevelHashKey",
-      "d"."PriorRowLevelHashKey",
-      "d"."FireAuditTrigger"
-    FROM old "d"
-    INNER JOIN new "i" ON "i"."ManufacturerVehicleMakeId" = "d"."ManufacturerVehicleMakeId"
-                      AND "i"."TransactionNumber" = "d"."TransactionNumber";
-
-    -- Update the target table
-    UPDATE "Production"."ManufacturerVehicleMake" AS "ut"
-    SET
-      "ut"."RowLevelHashKey" = "Hashing"."CreateSha256KeyFromJsonInputProductionManufacturerVehicleMake"("i"."ManufacturerVehicleMakeId"),
-      "ut"."PriorRowLevelHashKey" = "d"."RowLevelHashKey",
-      "ut"."TransactionNumber" = "d"."TransactionNumber" + 1,
-      "ut"."SysStartTime" = now_timestamp,
-      "ut"."SysEndTime" = open_ended_sys_end_time,
-      "ut"."Note" = "i"."Note",
-      "ut"."FireAuditTrigger" = 'N'
-    FROM new "i"
-    INNER JOIN old "d" ON "i"."ManufacturerVehicleMakeId" = "d"."ManufacturerVehicleMakeId"
-                        AND "i"."TransactionNumber" = "d"."TransactionNumber"
-                        AND "i"."RowLevelHashKey" = "d"."RowLevelHashKey"
-    WHERE "i"."ManufacturerVehicleMakeId" = "ut"."ManufacturerVehicleMakeId"
-      AND "i"."TransactionNumber" = "ut"."TransactionNumber"
-      AND "i"."RowLevelHashKey" = "ut"."RowLevelHashKey";
-
-  END IF;
+    VALUES(
+      old."ManufacturerVehicleMakeId", old."ManufacturerVehicleMakeName", old."CountryId", old."MarketingType",
+      old."TransactionNumber",
+      coalesce(old."Note", concat('No Message Transaction Number: ', old."TransactionNumber")),
+      old."UserAuthorizationId",
+      old."SysStartTime",
+      new."SysStartTime",
+      old."RowLevelHashKey",
+      old."PriorRowLevelHashKey",
+      new."FireAuditTrigger",
+      new."SysStartTime",
+      'U',
+      'N'
+    );
   RETURN NEW;
 END;
-$$;
+$function$
+;
 
-CREATE TRIGGER "Production_uTu_ManufacturerVehicleMake"
+CREATE TRIGGER "uTu_ProductionManufacturerVehicleMake"
 AFTER UPDATE
 ON "Production"."ManufacturerVehicleMake"
 FOR EACH ROW
-EXECUTE FUNCTION update_ProductionManufacturerVehicleMake();
+EXECUTE FUNCTION "Production"."funcUpdateManufacturerVehicleMakeHistory"();
 
 
 
@@ -895,15 +771,19 @@ DECLARE
     column_output_in_json_including_null_values JSONB;
 BEGIN
     SELECT jsonb_build_object(
-      "d"."ManufacturerVehicleStockId", "d"."StockCode", "d"."ModelId", "d"."Cost", "d"."RepairsCharge", "d"."PartsCharge", "d"."DeliveryCharge", "d"."IsPremiumRoadHandlingPackage", "d"."VehicleColor", "d"."CustomerComment", "d"."PurchaseDate", "d"."TransactionNumber", "d"."Note", "d"."UserAuthorizationId", "d"."SysStartTime", "d"."SysEndTime", "d"."RowLevelHashKey", "d"."PriorRowLevelHashKey", "d"."FireAuditTrigger"
+      "ManufacturerVehicleStockId", "d"."ManufacturerVehicleStockId", "StockCode", "d"."StockCode", "ModelId", "d"."ModelId", "Cost", "d"."Cost", "RepairsCharge", "d"."RepairsCharge", "PartsCharge", "d"."PartsCharge", "DeliveryCharge", "d"."DeliveryCharge", "IsPremiumRoadHandlingPackage", "d"."IsPremiumRoadHandlingPackage", "VehicleColor", "d"."VehicleColor", "CustomerComment", "d"."CustomerComment", "PurchaseDate", "d"."PurchaseDate", "TransactionNumber", "d"."TransactionNumber", "Note", "d"."Note", "UserAuthorizationId", "d"."UserAuthorizationId", "SysStartTime", "d"."SysStartTime", "SysEndTime", "d"."SysEndTime", "RowLevelHashKey", "d"."RowLevelHashKey", "PriorRowLevelHashKey", "d"."PriorRowLevelHashKey", "FireAuditTrigger", "d"."FireAuditTrigger", 
+      "AuditDateTimeStamp", "d"."AuditDateTimeStamp", 
+      "DBaction", "d"."DBAction", 
+      "isDeleted", "d"."isDeleted"
     )::TEXT
     INTO column_output_in_json_including_null_values
     FROM "Production"."ManufacturerVehicleStock" as "d"
     WHERE "d"."ManufacturerVehicleStockId" = pky;
 
-    RETURN digest(column_output_in_json_including_null_values, 'sha256');
+    RETURN SHA256(column_output_in_json_including_null_values);
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql
+;
 
 -- Author: Ralph Granata
 -- Creation Date: 12/05/2023
@@ -930,8 +810,10 @@ BEGIN
         FROM "Audit"."ProductionManufacturerVehicleStockHistory" as "d"
         WHERE "d"."ManufacturerVehicleStockId" = pky
     );
+RETURN;
 end;
 $$LANGUAGE plpgsql;
+;
 
 
 -- View Name: "Audit"."FindUniqueTablePkyProductionManufacturerVehicleStock"
@@ -953,44 +835,40 @@ CREATE VIEW "Audit"."vwFindUniqueTablePkyProductionManufacturerVehicleStock" AS
 
 -- Description: PG-AuditDeleteTrigger Templated Code
 
-CREATE OR REPLACE FUNCTION delete_ProductionManufacturerVehicleStock()
+CREATE OR REPLACE FUNCTION "Production"."funcDeleteManufacturerVehicleStockHistory"()
 RETURNS TRIGGER
 LANGUAGE plpgsql
-AS $$
-DECLARE
-  now_timestamp TIMESTAMPTZ := current_timestamp;
-  db_action CHAR(1) := 'D';
-  is_deleted CHAR(1) := 'Y';
+AS $function$
+
 BEGIN
-  -- Trigger Code
-  INSERT INTO "Audit"."ProductionManufacturerVehicleStockHistory"
-  (
-    "d"."ManufacturerVehicleStockId", "d"."StockCode", "d"."ModelId", "d"."Cost", "d"."RepairsCharge", "d"."PartsCharge", "d"."DeliveryCharge", "d"."IsPremiumRoadHandlingPackage", "d"."VehicleColor", "d"."CustomerComment", "d"."PurchaseDate", "d"."TransactionNumber", "d"."Note", "d"."UserAuthorizationId", "d"."SysStartTime", "d"."SysEndTime", "d"."RowLevelHashKey", "d"."PriorRowLevelHashKey", "d"."FireAuditTrigger", "d"."AuditDateTimeStamp", "d"."DBAction", "d"."isDeleted"
-  )
-  SELECT
-    "d"."ManufacturerVehicleStockId", "d"."StockCode", "d"."ModelId", "d"."Cost", "d"."RepairsCharge", "d"."PartsCharge", "d"."DeliveryCharge", "d"."IsPremiumRoadHandlingPackage", "d"."VehicleColor", "d"."CustomerComment", "d"."PurchaseDate",
-    "d"."TransactionNumber",
-    'Last Transaction prior to deletion: ' + coalesce("d"."Note", concat('No Message Transaction Number: ', "d"."TransactionNumber")),
-    "d"."UserAuthorizationId",
-    "d"."SysStartTime",
-    @NowTimeStamp, -- AS SysEndTime
-    "d"."RowLevelHashKey",
-    "d"."PriorRowLevelHashKey",
-    "d"."FireAuditTrigger",
-    @NowTimeStamp,
-    @DBAction,
-    @isDeleted
-  FROM old AS "d";
-
-  RETURN OLD;
+    INSERT INTO "Audit"."ProductionManufacturerVehicleStockHistory"
+    (
+      "ManufacturerVehicleStockId", "StockCode", "ModelId", "Cost", "RepairsCharge", "PartsCharge", "DeliveryCharge", "IsPremiumRoadHandlingPackage", "VehicleColor", "CustomerComment", "PurchaseDate", "TransactionNumber", "Note", "UserAuthorizationId", "SysStartTime", "SysEndTime", "RowLevelHashKey", "PriorRowLevelHashKey", "FireAuditTrigger", "AuditDateTimeStamp", "DBAction", "IsDeleted"
+    )
+    VALUES(
+      old."ManufacturerVehicleStockId", old."StockCode", old."ModelId", old."Cost", old."RepairsCharge", old."PartsCharge", old."DeliveryCharge", old."IsPremiumRoadHandlingPackage", old."VehicleColor", old."CustomerComment", old."PurchaseDate",
+      old."TransactionNumber",
+      'Row was deleted',
+      old."UserAuthorizationId",
+      old."SysStartTime",
+      now(),
+      old."RowLevelHashKey",
+      old."PriorRowLevelHashKey",
+      old."FireAuditTrigger",
+      now(),
+      'D',
+      'Y'
+    );
+  RETURN NEW;
 END;
-$$;
+$function$
+;
 
-CREATE TRIGGER "Production_uTd_ManufacturerVehicleStock"
+CREATE TRIGGER "uTd_ProductionManufacturerVehicleStock"
 AFTER DELETE
 ON "Production"."ManufacturerVehicleStock"
 FOR EACH ROW
-EXECUTE FUNCTION delete_ProductionManufacturerVehicleStock();
+EXECUTE FUNCTION "Production"."funcDeleteManufacturerVehicleStockHistory"();
 
 
 -- Author: Ralph Granata
@@ -999,28 +877,29 @@ EXECUTE FUNCTION delete_ProductionManufacturerVehicleStock();
 -- Trigger Type: After 
 
 -- Description: PG-AuditInsertTrigger Templated Code
-
-CREATE OR REPLACE FUNCTION insert_ProductionManufacturerVehicleStock()
+CREATE OR REPLACE FUNCTION "Production"."funcInsertManufacturerVehicleStockHistory"()
 RETURNS TRIGGER
 LANGUAGE plpgsql
-AS $$
+AS $function$
+
 BEGIN
   IF NEW."TransactionNumber" = 1 THEN
   -- Update the current record hash keys and the temporal range of the transaction of factually being true
-  NEW."RowLevelHashKey" := "Hashing"."CreateSha256KeyFromJsonInputProductionManufacturerVehicleStock"(NEW."ManufacturerVehicleStockId");
+  NEW."RowLevelHashKey" := NULL; --"Hashing"."CreateSha256KeyFromJsonInputProductionManufacturerVehicleStock"(NEW."ManufacturerVehicleStockId");
   NEW."PriorRowLevelHashKey" := NULL;
   NEW."Note" := 'Row Inserted';
   NEW."FireAuditTrigger" := 'N';
   END IF;
   RETURN NEW;
 END;
-$$;
+$function$
+;
 
-CREATE TRIGGER "Production_uTi_ManufacturerVehicleStock"
+CREATE TRIGGER "uTi_ProductionManufacturerVehicleStock"
 AFTER INSERT
 ON "Production"."ManufacturerVehicleStock"
 FOR EACH ROW
-EXECUTE FUNCTION insert_ProductionManufacturerVehicleStock();
+EXECUTE FUNCTION "Production"."funcInsertManufacturerVehicleStockHistory"();
 
 
 
@@ -1033,74 +912,40 @@ EXECUTE FUNCTION insert_ProductionManufacturerVehicleStock();
 -- Trigger Type: After 
 
 -- Description: PG-AuditInsertTrigger Templated Code
-
-CREATE OR REPLACE FUNCTION update_ProductionManufacturerVehicleStock()
+CREATE OR REPLACE FUNCTION "Production"."funcUpdateManufacturerVehicleStockHistory"()
 RETURNS TRIGGER
 LANGUAGE plpgsql
-AS $$
-DECLARE
-  now_timestamp TIMESTAMP := current_timestamp;
-  open_ended_sys_end_time TIMESTAMP := '9999-12-31 23:59:59.9999999';
-  fire_audit_trigger CHAR(1) := 'N';
-  db_action CHAR(1) := 'U';
-  is_deleted CHAR(1) := 'N';
-BEGIN
-  -- Retrieve the value of FireAuditTrigger from the inserted record
-  SELECT "i"."FireAuditTrigger"
-  INTO fire_audit_trigger
-  FROM deleted "d"
-  INNER JOIN new "i" ON "i"."ManufacturerVehicleStockId" = "d"."ManufacturerVehicleStockId"
-                    AND "i"."TransactionNumber" = "d"."TransactionNumber";
+AS $function$
 
-  -- Audit only if FireAuditTrigger = 'Y'
-  IF (fire_audit_trigger = 'Y') THEN
-    -- Insert record into audit table
+BEGIN
     INSERT INTO "Audit"."ProductionManufacturerVehicleStockHistory"
     (
-      "d"."ManufacturerVehicleStockId", "d"."StockCode", "d"."ModelId", "d"."Cost", "d"."RepairsCharge", "d"."PartsCharge", "d"."DeliveryCharge", "d"."IsPremiumRoadHandlingPackage", "d"."VehicleColor", "d"."CustomerComment", "d"."PurchaseDate", "d"."TransactionNumber", "d"."Note", "d"."UserAuthorizationId", "d"."SysStartTime", "d"."SysEndTime", "d"."RowLevelHashKey", "d"."PriorRowLevelHashKey", "d"."FireAuditTrigger", "d"."AuditDateTimeStamp", "d"."DBAction", "d"."isDeleted"
+      "ManufacturerVehicleStockId", "StockCode", "ModelId", "Cost", "RepairsCharge", "PartsCharge", "DeliveryCharge", "IsPremiumRoadHandlingPackage", "VehicleColor", "CustomerComment", "PurchaseDate", "TransactionNumber", "Note", "UserAuthorizationId", "SysStartTime", "SysEndTime", "RowLevelHashKey", "PriorRowLevelHashKey", "FireAuditTrigger", "AuditDateTimeStamp", "DBAction", "IsDeleted"
     )
-    SELECT
-      "d"."ManufacturerVehicleStockId", "d"."StockCode", "d"."ModelId", "d"."Cost", "d"."RepairsCharge", "d"."PartsCharge", "d"."DeliveryCharge", "d"."IsPremiumRoadHandlingPackage", "d"."VehicleColor", "d"."CustomerComment", "d"."PurchaseDate",
-      "d"."TransactionNumber",
-      coalesce("d"."Note", concat('No Message Transaction Number: ', "d"."TransactionNumber")),
-      "d"."UserAuthorizationId",
-      "d"."SysStartTime",
-      now_timestamp,
-      "d"."RowLevelHashKey",
-      "d"."PriorRowLevelHashKey",
-      "d"."FireAuditTrigger"
-    FROM old "d"
-    INNER JOIN new "i" ON "i"."ManufacturerVehicleStockId" = "d"."ManufacturerVehicleStockId"
-                      AND "i"."TransactionNumber" = "d"."TransactionNumber";
-
-    -- Update the target table
-    UPDATE "Production"."ManufacturerVehicleStock" AS "ut"
-    SET
-      "ut"."RowLevelHashKey" = "Hashing"."CreateSha256KeyFromJsonInputProductionManufacturerVehicleStock"("i"."ManufacturerVehicleStockId"),
-      "ut"."PriorRowLevelHashKey" = "d"."RowLevelHashKey",
-      "ut"."TransactionNumber" = "d"."TransactionNumber" + 1,
-      "ut"."SysStartTime" = now_timestamp,
-      "ut"."SysEndTime" = open_ended_sys_end_time,
-      "ut"."Note" = "i"."Note",
-      "ut"."FireAuditTrigger" = 'N'
-    FROM new "i"
-    INNER JOIN old "d" ON "i"."ManufacturerVehicleStockId" = "d"."ManufacturerVehicleStockId"
-                        AND "i"."TransactionNumber" = "d"."TransactionNumber"
-                        AND "i"."RowLevelHashKey" = "d"."RowLevelHashKey"
-    WHERE "i"."ManufacturerVehicleStockId" = "ut"."ManufacturerVehicleStockId"
-      AND "i"."TransactionNumber" = "ut"."TransactionNumber"
-      AND "i"."RowLevelHashKey" = "ut"."RowLevelHashKey";
-
-  END IF;
+    VALUES(
+      old."ManufacturerVehicleStockId", old."StockCode", old."ModelId", old."Cost", old."RepairsCharge", old."PartsCharge", old."DeliveryCharge", old."IsPremiumRoadHandlingPackage", old."VehicleColor", old."CustomerComment", old."PurchaseDate",
+      old."TransactionNumber",
+      coalesce(old."Note", concat('No Message Transaction Number: ', old."TransactionNumber")),
+      old."UserAuthorizationId",
+      old."SysStartTime",
+      new."SysStartTime",
+      old."RowLevelHashKey",
+      old."PriorRowLevelHashKey",
+      new."FireAuditTrigger",
+      new."SysStartTime",
+      'U',
+      'N'
+    );
   RETURN NEW;
 END;
-$$;
+$function$
+;
 
-CREATE TRIGGER "Production_uTu_ManufacturerVehicleStock"
+CREATE TRIGGER "uTu_ProductionManufacturerVehicleStock"
 AFTER UPDATE
 ON "Production"."ManufacturerVehicleStock"
 FOR EACH ROW
-EXECUTE FUNCTION update_ProductionManufacturerVehicleStock();
+EXECUTE FUNCTION "Production"."funcUpdateManufacturerVehicleStockHistory"();
 
 
 
@@ -1116,15 +961,19 @@ DECLARE
     column_output_in_json_including_null_values JSONB;
 BEGIN
     SELECT jsonb_build_object(
-      "d"."SalesCategoryThresholdId", "d"."LowerThreshold", "d"."UpperThreshold", "d"."CategoryDescription", "d"."TransactionNumber", "d"."Note", "d"."UserAuthorizationId", "d"."SysStartTime", "d"."SysEndTime", "d"."RowLevelHashKey", "d"."PriorRowLevelHashKey", "d"."FireAuditTrigger"
+      "SalesCategoryThresholdId", "d"."SalesCategoryThresholdId", "LowerThreshold", "d"."LowerThreshold", "UpperThreshold", "d"."UpperThreshold", "CategoryDescription", "d"."CategoryDescription", "TransactionNumber", "d"."TransactionNumber", "Note", "d"."Note", "UserAuthorizationId", "d"."UserAuthorizationId", "SysStartTime", "d"."SysStartTime", "SysEndTime", "d"."SysEndTime", "RowLevelHashKey", "d"."RowLevelHashKey", "PriorRowLevelHashKey", "d"."PriorRowLevelHashKey", "FireAuditTrigger", "d"."FireAuditTrigger", 
+      "AuditDateTimeStamp", "d"."AuditDateTimeStamp", 
+      "DBaction", "d"."DBAction", 
+      "isDeleted", "d"."isDeleted"
     )::TEXT
     INTO column_output_in_json_including_null_values
     FROM "Sales"."SalesCategoryThreshold" as "d"
     WHERE "d"."SalesCategoryThresholdId" = pky;
 
-    RETURN digest(column_output_in_json_including_null_values, 'sha256');
+    RETURN SHA256(column_output_in_json_including_null_values);
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql
+;
 
 -- Author: Ralph Granata
 -- Creation Date: 12/05/2023
@@ -1151,8 +1000,10 @@ BEGIN
         FROM "Audit"."SalesSalesCategoryThresholdHistory" as "d"
         WHERE "d"."SalesCategoryThresholdId" = pky
     );
+RETURN;
 end;
 $$LANGUAGE plpgsql;
+;
 
 
 -- View Name: "Audit"."FindUniqueTablePkySalesSalesCategoryThreshold"
@@ -1174,44 +1025,40 @@ CREATE VIEW "Audit"."vwFindUniqueTablePkySalesSalesCategoryThreshold" AS
 
 -- Description: PG-AuditDeleteTrigger Templated Code
 
-CREATE OR REPLACE FUNCTION delete_SalesSalesCategoryThreshold()
+CREATE OR REPLACE FUNCTION "Sales"."funcDeleteSalesCategoryThresholdHistory"()
 RETURNS TRIGGER
 LANGUAGE plpgsql
-AS $$
-DECLARE
-  now_timestamp TIMESTAMPTZ := current_timestamp;
-  db_action CHAR(1) := 'D';
-  is_deleted CHAR(1) := 'Y';
+AS $function$
+
 BEGIN
-  -- Trigger Code
-  INSERT INTO "Audit"."SalesSalesCategoryThresholdHistory"
-  (
-    "d"."SalesCategoryThresholdId", "d"."LowerThreshold", "d"."UpperThreshold", "d"."CategoryDescription", "d"."TransactionNumber", "d"."Note", "d"."UserAuthorizationId", "d"."SysStartTime", "d"."SysEndTime", "d"."RowLevelHashKey", "d"."PriorRowLevelHashKey", "d"."FireAuditTrigger", "d"."AuditDateTimeStamp", "d"."DBAction", "d"."isDeleted"
-  )
-  SELECT
-    "d"."SalesCategoryThresholdId", "d"."LowerThreshold", "d"."UpperThreshold", "d"."CategoryDescription",
-    "d"."TransactionNumber",
-    'Last Transaction prior to deletion: ' + coalesce("d"."Note", concat('No Message Transaction Number: ', "d"."TransactionNumber")),
-    "d"."UserAuthorizationId",
-    "d"."SysStartTime",
-    @NowTimeStamp, -- AS SysEndTime
-    "d"."RowLevelHashKey",
-    "d"."PriorRowLevelHashKey",
-    "d"."FireAuditTrigger",
-    @NowTimeStamp,
-    @DBAction,
-    @isDeleted
-  FROM old AS "d";
-
-  RETURN OLD;
+    INSERT INTO "Audit"."SalesSalesCategoryThresholdHistory"
+    (
+      "SalesCategoryThresholdId", "LowerThreshold", "UpperThreshold", "CategoryDescription", "TransactionNumber", "Note", "UserAuthorizationId", "SysStartTime", "SysEndTime", "RowLevelHashKey", "PriorRowLevelHashKey", "FireAuditTrigger", "AuditDateTimeStamp", "DBAction", "IsDeleted"
+    )
+    VALUES(
+      old."SalesCategoryThresholdId", old."LowerThreshold", old."UpperThreshold", old."CategoryDescription",
+      old."TransactionNumber",
+      'Row was deleted',
+      old."UserAuthorizationId",
+      old."SysStartTime",
+      now(),
+      old."RowLevelHashKey",
+      old."PriorRowLevelHashKey",
+      old."FireAuditTrigger",
+      now(),
+      'D',
+      'Y'
+    );
+  RETURN NEW;
 END;
-$$;
+$function$
+;
 
-CREATE TRIGGER "Sales_uTd_SalesCategoryThreshold"
+CREATE TRIGGER "uTd_SalesSalesCategoryThreshold"
 AFTER DELETE
 ON "Sales"."SalesCategoryThreshold"
 FOR EACH ROW
-EXECUTE FUNCTION delete_SalesSalesCategoryThreshold();
+EXECUTE FUNCTION "Sales"."funcDeleteSalesCategoryThresholdHistory"();
 
 
 -- Author: Ralph Granata
@@ -1220,28 +1067,29 @@ EXECUTE FUNCTION delete_SalesSalesCategoryThreshold();
 -- Trigger Type: After 
 
 -- Description: PG-AuditInsertTrigger Templated Code
-
-CREATE OR REPLACE FUNCTION insert_SalesSalesCategoryThreshold()
+CREATE OR REPLACE FUNCTION "Sales"."funcInsertSalesCategoryThresholdHistory"()
 RETURNS TRIGGER
 LANGUAGE plpgsql
-AS $$
+AS $function$
+
 BEGIN
   IF NEW."TransactionNumber" = 1 THEN
   -- Update the current record hash keys and the temporal range of the transaction of factually being true
-  NEW."RowLevelHashKey" := "Hashing"."CreateSha256KeyFromJsonInputSalesSalesCategoryThreshold"(NEW."SalesCategoryThresholdId");
+  NEW."RowLevelHashKey" := NULL; --"Hashing"."CreateSha256KeyFromJsonInputSalesSalesCategoryThreshold"(NEW."SalesCategoryThresholdId");
   NEW."PriorRowLevelHashKey" := NULL;
   NEW."Note" := 'Row Inserted';
   NEW."FireAuditTrigger" := 'N';
   END IF;
   RETURN NEW;
 END;
-$$;
+$function$
+;
 
-CREATE TRIGGER "Sales_uTi_SalesCategoryThreshold"
+CREATE TRIGGER "uTi_SalesSalesCategoryThreshold"
 AFTER INSERT
 ON "Sales"."SalesCategoryThreshold"
 FOR EACH ROW
-EXECUTE FUNCTION insert_SalesSalesCategoryThreshold();
+EXECUTE FUNCTION "Sales"."funcInsertSalesCategoryThresholdHistory"();
 
 
 
@@ -1254,78 +1102,44 @@ EXECUTE FUNCTION insert_SalesSalesCategoryThreshold();
 -- Trigger Type: After 
 
 -- Description: PG-AuditInsertTrigger Templated Code
-
-CREATE OR REPLACE FUNCTION update_SalesSalesCategoryThreshold()
+CREATE OR REPLACE FUNCTION "Sales"."funcUpdateSalesCategoryThresholdHistory"()
 RETURNS TRIGGER
 LANGUAGE plpgsql
-AS $$
-DECLARE
-  now_timestamp TIMESTAMP := current_timestamp;
-  open_ended_sys_end_time TIMESTAMP := '9999-12-31 23:59:59.9999999';
-  fire_audit_trigger CHAR(1) := 'N';
-  db_action CHAR(1) := 'U';
-  is_deleted CHAR(1) := 'N';
-BEGIN
-  -- Retrieve the value of FireAuditTrigger from the inserted record
-  SELECT "i"."FireAuditTrigger"
-  INTO fire_audit_trigger
-  FROM deleted "d"
-  INNER JOIN new "i" ON "i"."SalesCategoryThresholdId" = "d"."SalesCategoryThresholdId"
-                    AND "i"."TransactionNumber" = "d"."TransactionNumber";
+AS $function$
 
-  -- Audit only if FireAuditTrigger = 'Y'
-  IF (fire_audit_trigger = 'Y') THEN
-    -- Insert record into audit table
+BEGIN
     INSERT INTO "Audit"."SalesSalesCategoryThresholdHistory"
     (
-      "d"."SalesCategoryThresholdId", "d"."LowerThreshold", "d"."UpperThreshold", "d"."CategoryDescription", "d"."TransactionNumber", "d"."Note", "d"."UserAuthorizationId", "d"."SysStartTime", "d"."SysEndTime", "d"."RowLevelHashKey", "d"."PriorRowLevelHashKey", "d"."FireAuditTrigger", "d"."AuditDateTimeStamp", "d"."DBAction", "d"."isDeleted"
+      "SalesCategoryThresholdId", "LowerThreshold", "UpperThreshold", "CategoryDescription", "TransactionNumber", "Note", "UserAuthorizationId", "SysStartTime", "SysEndTime", "RowLevelHashKey", "PriorRowLevelHashKey", "FireAuditTrigger", "AuditDateTimeStamp", "DBAction", "IsDeleted"
     )
-    SELECT
-      "d"."SalesCategoryThresholdId", "d"."LowerThreshold", "d"."UpperThreshold", "d"."CategoryDescription",
-      "d"."TransactionNumber",
-      coalesce("d"."Note", concat('No Message Transaction Number: ', "d"."TransactionNumber")),
-      "d"."UserAuthorizationId",
-      "d"."SysStartTime",
-      now_timestamp,
-      "d"."RowLevelHashKey",
-      "d"."PriorRowLevelHashKey",
-      "d"."FireAuditTrigger"
-    FROM old "d"
-    INNER JOIN new "i" ON "i"."SalesCategoryThresholdId" = "d"."SalesCategoryThresholdId"
-                      AND "i"."TransactionNumber" = "d"."TransactionNumber";
-
-    -- Update the target table
-    UPDATE "Sales"."SalesCategoryThreshold" AS "ut"
-    SET
-      "ut"."RowLevelHashKey" = "Hashing"."CreateSha256KeyFromJsonInputSalesSalesCategoryThreshold"("i"."SalesCategoryThresholdId"),
-      "ut"."PriorRowLevelHashKey" = "d"."RowLevelHashKey",
-      "ut"."TransactionNumber" = "d"."TransactionNumber" + 1,
-      "ut"."SysStartTime" = now_timestamp,
-      "ut"."SysEndTime" = open_ended_sys_end_time,
-      "ut"."Note" = "i"."Note",
-      "ut"."FireAuditTrigger" = 'N'
-    FROM new "i"
-    INNER JOIN old "d" ON "i"."SalesCategoryThresholdId" = "d"."SalesCategoryThresholdId"
-                        AND "i"."TransactionNumber" = "d"."TransactionNumber"
-                        AND "i"."RowLevelHashKey" = "d"."RowLevelHashKey"
-    WHERE "i"."SalesCategoryThresholdId" = "ut"."SalesCategoryThresholdId"
-      AND "i"."TransactionNumber" = "ut"."TransactionNumber"
-      AND "i"."RowLevelHashKey" = "ut"."RowLevelHashKey";
-
-  END IF;
+    VALUES(
+      old."SalesCategoryThresholdId", old."LowerThreshold", old."UpperThreshold", old."CategoryDescription",
+      old."TransactionNumber",
+      coalesce(old."Note", concat('No Message Transaction Number: ', old."TransactionNumber")),
+      old."UserAuthorizationId",
+      old."SysStartTime",
+      new."SysStartTime",
+      old."RowLevelHashKey",
+      old."PriorRowLevelHashKey",
+      new."FireAuditTrigger",
+      new."SysStartTime",
+      'U',
+      'N'
+    );
   RETURN NEW;
 END;
-$$;
+$function$
+;
 
-CREATE TRIGGER "Sales_uTu_SalesCategoryThreshold"
+CREATE TRIGGER "uTu_SalesSalesCategoryThreshold"
 AFTER UPDATE
 ON "Sales"."SalesCategoryThreshold"
 FOR EACH ROW
-EXECUTE FUNCTION update_SalesSalesCategoryThreshold();
+EXECUTE FUNCTION "Sales"."funcUpdateSalesCategoryThresholdHistory"();
 
 
 
-CREATE OR REPLACE FUNCTION update_category_description()
+CREATE OR REPLACE FUNCTION "Sales"."funcUpdateSalesCategoryThresholdCategoryDescription"()
 RETURNS TRIGGER AS $$
 BEGIN
   NEW."CategoryDescription" = (CASE
@@ -1343,9 +1157,9 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Create a trigger to call the function before each INSERT or UPDATE
-CREATE TRIGGER update_category_description
+CREATE TRIGGER "uTu_SalesSalesCategoryThresholdCategoryDescription"
 BEFORE INSERT OR UPDATE ON "Sales"."SalesCategoryThreshold"
-FOR EACH ROW EXECUTE FUNCTION update_category_description();
+FOR EACH ROW EXECUTE FUNCTION "Sales"."funcUpdateSalesCategoryThresholdCategoryDescription"();
 
 -- Author: Ralph Granata
 -- Creation Date: 12/05/2023
@@ -1359,15 +1173,19 @@ DECLARE
     column_output_in_json_including_null_values JSONB;
 BEGIN
     SELECT jsonb_build_object(
-      "d"."SalesOrderVehicleId", "d"."CustomerId", "d"."StaffId", "d"."InvoiceNumber", "d"."TotalSalePrice", "d"."SaleDate", "d"."SalesCategoryThresholdId", "d"."TransactionNumber", "d"."Note", "d"."UserAuthorizationId", "d"."SysStartTime", "d"."SysEndTime", "d"."RowLevelHashKey", "d"."PriorRowLevelHashKey", "d"."FireAuditTrigger"
+      "SalesOrderVehicleId", "d"."SalesOrderVehicleId", "CustomerId", "d"."CustomerId", "StaffId", "d"."StaffId", "InvoiceNumber", "d"."InvoiceNumber", "TotalSalePrice", "d"."TotalSalePrice", "SaleDate", "d"."SaleDate", "SalesCategoryThresholdId", "d"."SalesCategoryThresholdId", "TransactionNumber", "d"."TransactionNumber", "Note", "d"."Note", "UserAuthorizationId", "d"."UserAuthorizationId", "SysStartTime", "d"."SysStartTime", "SysEndTime", "d"."SysEndTime", "RowLevelHashKey", "d"."RowLevelHashKey", "PriorRowLevelHashKey", "d"."PriorRowLevelHashKey", "FireAuditTrigger", "d"."FireAuditTrigger", 
+      "AuditDateTimeStamp", "d"."AuditDateTimeStamp", 
+      "DBaction", "d"."DBAction", 
+      "isDeleted", "d"."isDeleted"
     )::TEXT
     INTO column_output_in_json_including_null_values
     FROM "Sales"."SalesOrderVehicle" as "d"
     WHERE "d"."SalesOrderVehicleId" = pky;
 
-    RETURN digest(column_output_in_json_including_null_values, 'sha256');
+    RETURN SHA256(column_output_in_json_including_null_values);
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql
+;
 
 -- Author: Ralph Granata
 -- Creation Date: 12/05/2023
@@ -1394,8 +1212,10 @@ BEGIN
         FROM "Audit"."SalesSalesOrderVehicleHistory" as "d"
         WHERE "d"."SalesOrderVehicleId" = pky
     );
+RETURN;
 end;
 $$LANGUAGE plpgsql;
+;
 
 
 -- View Name: "Audit"."FindUniqueTablePkySalesSalesOrderVehicle"
@@ -1417,44 +1237,40 @@ CREATE VIEW "Audit"."vwFindUniqueTablePkySalesSalesOrderVehicle" AS
 
 -- Description: PG-AuditDeleteTrigger Templated Code
 
-CREATE OR REPLACE FUNCTION delete_SalesSalesOrderVehicle()
+CREATE OR REPLACE FUNCTION "Sales"."funcDeleteSalesOrderVehicleHistory"()
 RETURNS TRIGGER
 LANGUAGE plpgsql
-AS $$
-DECLARE
-  now_timestamp TIMESTAMPTZ := current_timestamp;
-  db_action CHAR(1) := 'D';
-  is_deleted CHAR(1) := 'Y';
+AS $function$
+
 BEGIN
-  -- Trigger Code
-  INSERT INTO "Audit"."SalesSalesOrderVehicleHistory"
-  (
-    "d"."SalesOrderVehicleId", "d"."CustomerId", "d"."StaffId", "d"."InvoiceNumber", "d"."TotalSalePrice", "d"."SaleDate", "d"."SalesCategoryThresholdId", "d"."TransactionNumber", "d"."Note", "d"."UserAuthorizationId", "d"."SysStartTime", "d"."SysEndTime", "d"."RowLevelHashKey", "d"."PriorRowLevelHashKey", "d"."FireAuditTrigger", "d"."AuditDateTimeStamp", "d"."DBAction", "d"."isDeleted"
-  )
-  SELECT
-    "d"."SalesOrderVehicleId", "d"."CustomerId", "d"."StaffId", "d"."InvoiceNumber", "d"."TotalSalePrice", "d"."SaleDate", "d"."SalesCategoryThresholdId",
-    "d"."TransactionNumber",
-    'Last Transaction prior to deletion: ' + coalesce("d"."Note", concat('No Message Transaction Number: ', "d"."TransactionNumber")),
-    "d"."UserAuthorizationId",
-    "d"."SysStartTime",
-    @NowTimeStamp, -- AS SysEndTime
-    "d"."RowLevelHashKey",
-    "d"."PriorRowLevelHashKey",
-    "d"."FireAuditTrigger",
-    @NowTimeStamp,
-    @DBAction,
-    @isDeleted
-  FROM old AS "d";
-
-  RETURN OLD;
+    INSERT INTO "Audit"."SalesSalesOrderVehicleHistory"
+    (
+      "SalesOrderVehicleId", "CustomerId", "StaffId", "InvoiceNumber", "TotalSalePrice", "SaleDate", "SalesCategoryThresholdId", "TransactionNumber", "Note", "UserAuthorizationId", "SysStartTime", "SysEndTime", "RowLevelHashKey", "PriorRowLevelHashKey", "FireAuditTrigger", "AuditDateTimeStamp", "DBAction", "IsDeleted"
+    )
+    VALUES(
+      old."SalesOrderVehicleId", old."CustomerId", old."StaffId", old."InvoiceNumber", old."TotalSalePrice", old."SaleDate", old."SalesCategoryThresholdId",
+      old."TransactionNumber",
+      'Row was deleted',
+      old."UserAuthorizationId",
+      old."SysStartTime",
+      now(),
+      old."RowLevelHashKey",
+      old."PriorRowLevelHashKey",
+      old."FireAuditTrigger",
+      now(),
+      'D',
+      'Y'
+    );
+  RETURN NEW;
 END;
-$$;
+$function$
+;
 
-CREATE TRIGGER "Sales_uTd_SalesOrderVehicle"
+CREATE TRIGGER "uTd_SalesSalesOrderVehicle"
 AFTER DELETE
 ON "Sales"."SalesOrderVehicle"
 FOR EACH ROW
-EXECUTE FUNCTION delete_SalesSalesOrderVehicle();
+EXECUTE FUNCTION "Sales"."funcDeleteSalesOrderVehicleHistory"();
 
 
 -- Author: Ralph Granata
@@ -1463,28 +1279,29 @@ EXECUTE FUNCTION delete_SalesSalesOrderVehicle();
 -- Trigger Type: After 
 
 -- Description: PG-AuditInsertTrigger Templated Code
-
-CREATE OR REPLACE FUNCTION insert_SalesSalesOrderVehicle()
+CREATE OR REPLACE FUNCTION "Sales"."funcInsertSalesOrderVehicleHistory"()
 RETURNS TRIGGER
 LANGUAGE plpgsql
-AS $$
+AS $function$
+
 BEGIN
   IF NEW."TransactionNumber" = 1 THEN
   -- Update the current record hash keys and the temporal range of the transaction of factually being true
-  NEW."RowLevelHashKey" := "Hashing"."CreateSha256KeyFromJsonInputSalesSalesOrderVehicle"(NEW."SalesOrderVehicleId");
+  NEW."RowLevelHashKey" := NULL; --"Hashing"."CreateSha256KeyFromJsonInputSalesSalesOrderVehicle"(NEW."SalesOrderVehicleId");
   NEW."PriorRowLevelHashKey" := NULL;
   NEW."Note" := 'Row Inserted';
   NEW."FireAuditTrigger" := 'N';
   END IF;
   RETURN NEW;
 END;
-$$;
+$function$
+;
 
-CREATE TRIGGER "Sales_uTi_SalesOrderVehicle"
+CREATE TRIGGER "uTi_SalesSalesOrderVehicle"
 AFTER INSERT
 ON "Sales"."SalesOrderVehicle"
 FOR EACH ROW
-EXECUTE FUNCTION insert_SalesSalesOrderVehicle();
+EXECUTE FUNCTION "Sales"."funcInsertSalesOrderVehicleHistory"();
 
 
 
@@ -1497,74 +1314,40 @@ EXECUTE FUNCTION insert_SalesSalesOrderVehicle();
 -- Trigger Type: After 
 
 -- Description: PG-AuditInsertTrigger Templated Code
-
-CREATE OR REPLACE FUNCTION update_SalesSalesOrderVehicle()
+CREATE OR REPLACE FUNCTION "Sales"."funcUpdateSalesOrderVehicleHistory"()
 RETURNS TRIGGER
 LANGUAGE plpgsql
-AS $$
-DECLARE
-  now_timestamp TIMESTAMP := current_timestamp;
-  open_ended_sys_end_time TIMESTAMP := '9999-12-31 23:59:59.9999999';
-  fire_audit_trigger CHAR(1) := 'N';
-  db_action CHAR(1) := 'U';
-  is_deleted CHAR(1) := 'N';
-BEGIN
-  -- Retrieve the value of FireAuditTrigger from the inserted record
-  SELECT "i"."FireAuditTrigger"
-  INTO fire_audit_trigger
-  FROM deleted "d"
-  INNER JOIN new "i" ON "i"."SalesOrderVehicleId" = "d"."SalesOrderVehicleId"
-                    AND "i"."TransactionNumber" = "d"."TransactionNumber";
+AS $function$
 
-  -- Audit only if FireAuditTrigger = 'Y'
-  IF (fire_audit_trigger = 'Y') THEN
-    -- Insert record into audit table
+BEGIN
     INSERT INTO "Audit"."SalesSalesOrderVehicleHistory"
     (
-      "d"."SalesOrderVehicleId", "d"."CustomerId", "d"."StaffId", "d"."InvoiceNumber", "d"."TotalSalePrice", "d"."SaleDate", "d"."SalesCategoryThresholdId", "d"."TransactionNumber", "d"."Note", "d"."UserAuthorizationId", "d"."SysStartTime", "d"."SysEndTime", "d"."RowLevelHashKey", "d"."PriorRowLevelHashKey", "d"."FireAuditTrigger", "d"."AuditDateTimeStamp", "d"."DBAction", "d"."isDeleted"
+      "SalesOrderVehicleId", "CustomerId", "StaffId", "InvoiceNumber", "TotalSalePrice", "SaleDate", "SalesCategoryThresholdId", "TransactionNumber", "Note", "UserAuthorizationId", "SysStartTime", "SysEndTime", "RowLevelHashKey", "PriorRowLevelHashKey", "FireAuditTrigger", "AuditDateTimeStamp", "DBAction", "IsDeleted"
     )
-    SELECT
-      "d"."SalesOrderVehicleId", "d"."CustomerId", "d"."StaffId", "d"."InvoiceNumber", "d"."TotalSalePrice", "d"."SaleDate", "d"."SalesCategoryThresholdId",
-      "d"."TransactionNumber",
-      coalesce("d"."Note", concat('No Message Transaction Number: ', "d"."TransactionNumber")),
-      "d"."UserAuthorizationId",
-      "d"."SysStartTime",
-      now_timestamp,
-      "d"."RowLevelHashKey",
-      "d"."PriorRowLevelHashKey",
-      "d"."FireAuditTrigger"
-    FROM old "d"
-    INNER JOIN new "i" ON "i"."SalesOrderVehicleId" = "d"."SalesOrderVehicleId"
-                      AND "i"."TransactionNumber" = "d"."TransactionNumber";
-
-    -- Update the target table
-    UPDATE "Sales"."SalesOrderVehicle" AS "ut"
-    SET
-      "ut"."RowLevelHashKey" = "Hashing"."CreateSha256KeyFromJsonInputSalesSalesOrderVehicle"("i"."SalesOrderVehicleId"),
-      "ut"."PriorRowLevelHashKey" = "d"."RowLevelHashKey",
-      "ut"."TransactionNumber" = "d"."TransactionNumber" + 1,
-      "ut"."SysStartTime" = now_timestamp,
-      "ut"."SysEndTime" = open_ended_sys_end_time,
-      "ut"."Note" = "i"."Note",
-      "ut"."FireAuditTrigger" = 'N'
-    FROM new "i"
-    INNER JOIN old "d" ON "i"."SalesOrderVehicleId" = "d"."SalesOrderVehicleId"
-                        AND "i"."TransactionNumber" = "d"."TransactionNumber"
-                        AND "i"."RowLevelHashKey" = "d"."RowLevelHashKey"
-    WHERE "i"."SalesOrderVehicleId" = "ut"."SalesOrderVehicleId"
-      AND "i"."TransactionNumber" = "ut"."TransactionNumber"
-      AND "i"."RowLevelHashKey" = "ut"."RowLevelHashKey";
-
-  END IF;
+    VALUES(
+      old."SalesOrderVehicleId", old."CustomerId", old."StaffId", old."InvoiceNumber", old."TotalSalePrice", old."SaleDate", old."SalesCategoryThresholdId",
+      old."TransactionNumber",
+      coalesce(old."Note", concat('No Message Transaction Number: ', old."TransactionNumber")),
+      old."UserAuthorizationId",
+      old."SysStartTime",
+      new."SysStartTime",
+      old."RowLevelHashKey",
+      old."PriorRowLevelHashKey",
+      new."FireAuditTrigger",
+      new."SysStartTime",
+      'U',
+      'N'
+    );
   RETURN NEW;
 END;
-$$;
+$function$
+;
 
-CREATE TRIGGER "Sales_uTu_SalesOrderVehicle"
+CREATE TRIGGER "uTu_SalesSalesOrderVehicle"
 AFTER UPDATE
 ON "Sales"."SalesOrderVehicle"
 FOR EACH ROW
-EXECUTE FUNCTION update_SalesSalesOrderVehicle();
+EXECUTE FUNCTION "Sales"."funcUpdateSalesOrderVehicleHistory"();
 
 
 
@@ -1580,15 +1363,19 @@ DECLARE
     column_output_in_json_including_null_values JSONB;
 BEGIN
     SELECT jsonb_build_object(
-      "d"."SalesOrderVehicleDetailId", "d"."SalesOrderVehicleId", "d"."LineItemNumber", "d"."ManufacturerVehicleStockId", "d"."SalePrice", "d"."LineItemDiscount", "d"."DerivedDiscountedSalePrice", "d"."TransactionNumber", "d"."Note", "d"."UserAuthorizationId", "d"."SysStartTime", "d"."SysEndTime", "d"."RowLevelHashKey", "d"."PriorRowLevelHashKey", "d"."FireAuditTrigger"
+      "SalesOrderVehicleDetailId", "d"."SalesOrderVehicleDetailId", "SalesOrderVehicleId", "d"."SalesOrderVehicleId", "LineItemNumber", "d"."LineItemNumber", "ManufacturerVehicleStockId", "d"."ManufacturerVehicleStockId", "SalePrice", "d"."SalePrice", "LineItemDiscount", "d"."LineItemDiscount", "DerivedDiscountedSalePrice", "d"."DerivedDiscountedSalePrice", "TransactionNumber", "d"."TransactionNumber", "Note", "d"."Note", "UserAuthorizationId", "d"."UserAuthorizationId", "SysStartTime", "d"."SysStartTime", "SysEndTime", "d"."SysEndTime", "RowLevelHashKey", "d"."RowLevelHashKey", "PriorRowLevelHashKey", "d"."PriorRowLevelHashKey", "FireAuditTrigger", "d"."FireAuditTrigger", 
+      "AuditDateTimeStamp", "d"."AuditDateTimeStamp", 
+      "DBaction", "d"."DBAction", 
+      "isDeleted", "d"."isDeleted"
     )::TEXT
     INTO column_output_in_json_including_null_values
     FROM "Sales"."SalesOrderVehicleDetail" as "d"
     WHERE "d"."SalesOrderVehicleDetailId" = pky;
 
-    RETURN digest(column_output_in_json_including_null_values, 'sha256');
+    RETURN SHA256(column_output_in_json_including_null_values);
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql
+;
 
 -- Author: Ralph Granata
 -- Creation Date: 12/05/2023
@@ -1615,11 +1402,13 @@ BEGIN
         FROM "Audit"."SalesSalesOrderVehicleDetailHistory" as "d"
         WHERE "d"."SalesOrderVehicleDetailId" = pky
     );
+RETURN;
 end;
 $$LANGUAGE plpgsql;
+;
 
 
-CREATE OR REPLACE FUNCTION update_derived_discount()
+CREATE OR REPLACE FUNCTION "Sales"."funcUpdateSalesOrderVehicleDetailDerivedDiscountedSalePrice"()
 RETURNS TRIGGER AS $$
 BEGIN
   NEW."DerivedDiscountedSalePrice" = NEW."SalePrice" - NEW."LineItemDiscount";
@@ -1628,10 +1417,9 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Create a trigger to call the function before each INSERT or UPDATE
-CREATE TRIGGER update_derived_column_trigger
+CREATE TRIGGER "uTu_SalesSalesOrderVehicleDetailDerivedDiscountedSalePrice"
 BEFORE INSERT OR UPDATE ON "Sales"."SalesOrderVehicleDetail"
-FOR EACH ROW EXECUTE FUNCTION update_derived_discount();
-
+FOR EACH ROW EXECUTE FUNCTION "Sales"."funcUpdateSalesOrderVehicleDetailDerivedDiscountedSalePrice"();
 
 -- View Name: "Audit"."FindUniqueTablePkySalesSalesOrderVehicleDetail"
 -- Description: TSQL-vwFindUniqueTablePkyView Templated Code plus SalesSalesOrderVehicleDetail
@@ -1652,44 +1440,40 @@ CREATE VIEW "Audit"."vwFindUniqueTablePkySalesSalesOrderVehicleDetail" AS
 
 -- Description: PG-AuditDeleteTrigger Templated Code
 
-CREATE OR REPLACE FUNCTION delete_SalesSalesOrderVehicleDetail()
+CREATE OR REPLACE FUNCTION "Sales"."funcDeleteSalesOrderVehicleDetailHistory"()
 RETURNS TRIGGER
 LANGUAGE plpgsql
-AS $$
-DECLARE
-  now_timestamp TIMESTAMPTZ := current_timestamp;
-  db_action CHAR(1) := 'D';
-  is_deleted CHAR(1) := 'Y';
+AS $function$
+
 BEGIN
-  -- Trigger Code
-  INSERT INTO "Audit"."SalesSalesOrderVehicleDetailHistory"
-  (
-    "d"."SalesOrderVehicleDetailId", "d"."SalesOrderVehicleId", "d"."LineItemNumber", "d"."ManufacturerVehicleStockId", "d"."SalePrice", "d"."LineItemDiscount", "d"."DerivedDiscountedSalePrice", "d"."TransactionNumber", "d"."Note", "d"."UserAuthorizationId", "d"."SysStartTime", "d"."SysEndTime", "d"."RowLevelHashKey", "d"."PriorRowLevelHashKey", "d"."FireAuditTrigger", "d"."AuditDateTimeStamp", "d"."DBAction", "d"."isDeleted"
-  )
-  SELECT
-    "d"."SalesOrderVehicleDetailId", "d"."SalesOrderVehicleId", "d"."LineItemNumber", "d"."SalePrice", "d"."LineItemDiscount", "d"."DerivedDiscountedSalePrice", "d"."ManufacturerVehicleStockId",
-    "d"."TransactionNumber",
-    'Last Transaction prior to deletion: ' + coalesce("d"."Note", concat('No Message Transaction Number: ', "d"."TransactionNumber")),
-    "d"."UserAuthorizationId",
-    "d"."SysStartTime",
-    @NowTimeStamp, -- AS SysEndTime
-    "d"."RowLevelHashKey",
-    "d"."PriorRowLevelHashKey",
-    "d"."FireAuditTrigger",
-    @NowTimeStamp,
-    @DBAction,
-    @isDeleted
-  FROM old AS "d";
-
-  RETURN OLD;
+    INSERT INTO "Audit"."SalesSalesOrderVehicleDetailHistory"
+    (
+      "SalesOrderVehicleDetailId", "SalesOrderVehicleId", "LineItemNumber", "ManufacturerVehicleStockId", "SalePrice", "LineItemDiscount", "DerivedDiscountedSalePrice", "TransactionNumber", "Note", "UserAuthorizationId", "SysStartTime", "SysEndTime", "RowLevelHashKey", "PriorRowLevelHashKey", "FireAuditTrigger", "AuditDateTimeStamp", "DBAction", "IsDeleted"
+    )
+    VALUES(
+       old."SalesOrderVehicleDetailId",  old."SalesOrderVehicleId", old."LineItemNumber",  old."SalePrice", old."LineItemDiscount",  old."DerivedDiscountedSalePrice", old."ManufacturerVehicleStockId",
+      old."TransactionNumber",
+      'Row was deleted',
+      old."UserAuthorizationId",
+      old."SysStartTime",
+      now(),
+      old."RowLevelHashKey",
+      old."PriorRowLevelHashKey",
+      old."FireAuditTrigger",
+      now(),
+      'D',
+      'Y'
+    );
+  RETURN NEW;
 END;
-$$;
+$function$
+;
 
-CREATE TRIGGER "Sales_uTd_SalesOrderVehicleDetail"
+CREATE TRIGGER "uTd_SalesSalesOrderVehicleDetail"
 AFTER DELETE
 ON "Sales"."SalesOrderVehicleDetail"
 FOR EACH ROW
-EXECUTE FUNCTION delete_SalesSalesOrderVehicleDetail();
+EXECUTE FUNCTION "Sales"."funcDeleteSalesOrderVehicleDetailHistory"();
 
 
 -- Author: Ralph Granata
@@ -1698,28 +1482,29 @@ EXECUTE FUNCTION delete_SalesSalesOrderVehicleDetail();
 -- Trigger Type: After 
 
 -- Description: PG-AuditInsertTrigger Templated Code
-
-CREATE OR REPLACE FUNCTION insert_SalesSalesOrderVehicleDetail()
+CREATE OR REPLACE FUNCTION "Sales"."funcInsertSalesOrderVehicleDetailHistory"()
 RETURNS TRIGGER
 LANGUAGE plpgsql
-AS $$
+AS $function$
+
 BEGIN
   IF NEW."TransactionNumber" = 1 THEN
   -- Update the current record hash keys and the temporal range of the transaction of factually being true
-  NEW."RowLevelHashKey" := "Hashing"."CreateSha256KeyFromJsonInputSalesSalesOrderVehicleDetail"(NEW."SalesOrderVehicleDetailId");
+  NEW."RowLevelHashKey" := NULL; --"Hashing"."CreateSha256KeyFromJsonInputSalesSalesOrderVehicleDetail"(NEW."SalesOrderVehicleDetailId");
   NEW."PriorRowLevelHashKey" := NULL;
   NEW."Note" := 'Row Inserted';
   NEW."FireAuditTrigger" := 'N';
   END IF;
   RETURN NEW;
 END;
-$$;
+$function$
+;
 
-CREATE TRIGGER "Sales_uTi_SalesOrderVehicleDetail"
+CREATE TRIGGER "uTi_SalesSalesOrderVehicleDetail"
 AFTER INSERT
 ON "Sales"."SalesOrderVehicleDetail"
 FOR EACH ROW
-EXECUTE FUNCTION insert_SalesSalesOrderVehicleDetail();
+EXECUTE FUNCTION "Sales"."funcInsertSalesOrderVehicleDetailHistory"();
 
 
 
@@ -1732,74 +1517,40 @@ EXECUTE FUNCTION insert_SalesSalesOrderVehicleDetail();
 -- Trigger Type: After 
 
 -- Description: PG-AuditInsertTrigger Templated Code
-
-CREATE OR REPLACE FUNCTION update_SalesSalesOrderVehicleDetail()
+CREATE OR REPLACE FUNCTION "Sales"."funcUpdateSalesOrderVehicleDetailHistory"()
 RETURNS TRIGGER
 LANGUAGE plpgsql
-AS $$
-DECLARE
-  now_timestamp TIMESTAMP := current_timestamp;
-  open_ended_sys_end_time TIMESTAMP := '9999-12-31 23:59:59.9999999';
-  fire_audit_trigger CHAR(1) := 'N';
-  db_action CHAR(1) := 'U';
-  is_deleted CHAR(1) := 'N';
-BEGIN
-  -- Retrieve the value of FireAuditTrigger from the inserted record
-  SELECT "i"."FireAuditTrigger"
-  INTO fire_audit_trigger
-  FROM deleted "d"
-  INNER JOIN new "i" ON "i"."SalesOrderVehicleDetailId" = "d"."SalesOrderVehicleDetailId"
-                    AND "i"."TransactionNumber" = "d"."TransactionNumber";
+AS $function$
 
-  -- Audit only if FireAuditTrigger = 'Y'
-  IF (fire_audit_trigger = 'Y') THEN
-    -- Insert record into audit table
+BEGIN
     INSERT INTO "Audit"."SalesSalesOrderVehicleDetailHistory"
     (
-      "d"."SalesOrderVehicleDetailId", "d"."SalesOrderVehicleId", "d"."LineItemNumber", "d"."ManufacturerVehicleStockId", "d"."SalePrice", "d"."LineItemDiscount", "d"."DerivedDiscountedSalePrice", "d"."TransactionNumber", "d"."Note", "d"."UserAuthorizationId", "d"."SysStartTime", "d"."SysEndTime", "d"."RowLevelHashKey", "d"."PriorRowLevelHashKey", "d"."FireAuditTrigger", "d"."AuditDateTimeStamp", "d"."DBAction", "d"."isDeleted"
+      "SalesOrderVehicleDetailId", "SalesOrderVehicleId", "LineItemNumber", "ManufacturerVehicleStockId", "SalePrice", "LineItemDiscount", "DerivedDiscountedSalePrice", "TransactionNumber", "Note", "UserAuthorizationId", "SysStartTime", "SysEndTime", "RowLevelHashKey", "PriorRowLevelHashKey", "FireAuditTrigger", "AuditDateTimeStamp", "DBAction", "IsDeleted"
     )
-    SELECT
-      "d"."SalesOrderVehicleDetailId", "d"."SalesOrderVehicleId", "d"."LineItemNumber", "d"."SalePrice", "d"."LineItemDiscount", "d"."DerivedDiscountedSalePrice", "d"."ManufacturerVehicleStockId",
-      "d"."TransactionNumber",
-      coalesce("d"."Note", concat('No Message Transaction Number: ', "d"."TransactionNumber")),
-      "d"."UserAuthorizationId",
-      "d"."SysStartTime",
-      now_timestamp,
-      "d"."RowLevelHashKey",
-      "d"."PriorRowLevelHashKey",
-      "d"."FireAuditTrigger"
-    FROM old "d"
-    INNER JOIN new "i" ON "i"."SalesOrderVehicleDetailId" = "d"."SalesOrderVehicleDetailId"
-                      AND "i"."TransactionNumber" = "d"."TransactionNumber";
-
-    -- Update the target table
-    UPDATE "Sales"."SalesOrderVehicleDetail" AS "ut"
-    SET
-      "ut"."RowLevelHashKey" = "Hashing"."CreateSha256KeyFromJsonInputSalesSalesOrderVehicleDetail"("i"."SalesOrderVehicleDetailId"),
-      "ut"."PriorRowLevelHashKey" = "d"."RowLevelHashKey",
-      "ut"."TransactionNumber" = "d"."TransactionNumber" + 1,
-      "ut"."SysStartTime" = now_timestamp,
-      "ut"."SysEndTime" = open_ended_sys_end_time,
-      "ut"."Note" = "i"."Note",
-      "ut"."FireAuditTrigger" = 'N'
-    FROM new "i"
-    INNER JOIN old "d" ON "i"."SalesOrderVehicleDetailId" = "d"."SalesOrderVehicleDetailId"
-                        AND "i"."TransactionNumber" = "d"."TransactionNumber"
-                        AND "i"."RowLevelHashKey" = "d"."RowLevelHashKey"
-    WHERE "i"."SalesOrderVehicleDetailId" = "ut"."SalesOrderVehicleDetailId"
-      AND "i"."TransactionNumber" = "ut"."TransactionNumber"
-      AND "i"."RowLevelHashKey" = "ut"."RowLevelHashKey";
-
-  END IF;
+    VALUES(
+       old."SalesOrderVehicleDetailId",  old."SalesOrderVehicleId", old."LineItemNumber",  old."SalePrice", old."LineItemDiscount",  old."DerivedDiscountedSalePrice", old."ManufacturerVehicleStockId",
+      old."TransactionNumber",
+      coalesce(old."Note", concat('No Message Transaction Number: ', old."TransactionNumber")),
+      old."UserAuthorizationId",
+      old."SysStartTime",
+      new."SysStartTime",
+      old."RowLevelHashKey",
+      old."PriorRowLevelHashKey",
+      new."FireAuditTrigger",
+      new."SysStartTime",
+      'U',
+      'N'
+    );
   RETURN NEW;
 END;
-$$;
+$function$
+;
 
-CREATE TRIGGER "Sales_uTu_SalesOrderVehicleDetail"
+CREATE TRIGGER "uTu_SalesSalesOrderVehicleDetail"
 AFTER UPDATE
 ON "Sales"."SalesOrderVehicleDetail"
 FOR EACH ROW
-EXECUTE FUNCTION update_SalesSalesOrderVehicleDetail();
+EXECUTE FUNCTION "Sales"."funcUpdateSalesOrderVehicleDetailHistory"();
 
 
 
@@ -1815,15 +1566,19 @@ DECLARE
     column_output_in_json_including_null_values JSONB;
 BEGIN
     SELECT jsonb_build_object(
-      "d"."StaffId", "d"."StaffName", "d"."ManagerId", "d"."Department", "d"."TransactionNumber", "d"."Note", "d"."UserAuthorizationId", "d"."SysStartTime", "d"."SysEndTime", "d"."RowLevelHashKey", "d"."PriorRowLevelHashKey", "d"."FireAuditTrigger"
+      "StaffId", "d"."StaffId", "StaffName", "d"."StaffName", "ManagerId", "d"."ManagerId", "Department", "d"."Department", "TransactionNumber", "d"."TransactionNumber", "Note", "d"."Note", "UserAuthorizationId", "d"."UserAuthorizationId", "SysStartTime", "d"."SysStartTime", "SysEndTime", "d"."SysEndTime", "RowLevelHashKey", "d"."RowLevelHashKey", "PriorRowLevelHashKey", "d"."PriorRowLevelHashKey", "FireAuditTrigger", "d"."FireAuditTrigger", 
+      "AuditDateTimeStamp", "d"."AuditDateTimeStamp", 
+      "DBaction", "d"."DBAction", 
+      "isDeleted", "d"."isDeleted"
     )::TEXT
     INTO column_output_in_json_including_null_values
     FROM "HumanResources"."Staff" as "d"
     WHERE "d"."StaffId" = pky;
 
-    RETURN digest(column_output_in_json_including_null_values, 'sha256');
+    RETURN SHA256(column_output_in_json_including_null_values);
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql
+;
 
 -- Author: Ralph Granata
 -- Creation Date: 12/05/2023
@@ -1850,8 +1605,10 @@ BEGIN
         FROM "Audit"."HumanResourcesStaffHistory" as "d"
         WHERE "d"."StaffId" = pky
     );
+RETURN;
 end;
 $$LANGUAGE plpgsql;
+;
 
 
 -- View Name: "Audit"."FindUniqueTablePkyHumanResourcesStaff"
@@ -1873,44 +1630,40 @@ CREATE VIEW "Audit"."vwFindUniqueTablePkyHumanResourcesStaff" AS
 
 -- Description: PG-AuditDeleteTrigger Templated Code
 
-CREATE OR REPLACE FUNCTION delete_HumanResourcesStaff()
+CREATE OR REPLACE FUNCTION "HumanResources"."funcDeleteStaffHistory"()
 RETURNS TRIGGER
 LANGUAGE plpgsql
-AS $$
-DECLARE
-  now_timestamp TIMESTAMPTZ := current_timestamp;
-  db_action CHAR(1) := 'D';
-  is_deleted CHAR(1) := 'Y';
+AS $function$
+
 BEGIN
-  -- Trigger Code
-  INSERT INTO "Audit"."HumanResourcesStaffHistory"
-  (
-    "d"."StaffId", "d"."StaffName", "d"."ManagerId", "d"."Department", "d"."TransactionNumber", "d"."Note", "d"."UserAuthorizationId", "d"."SysStartTime", "d"."SysEndTime", "d"."RowLevelHashKey", "d"."PriorRowLevelHashKey", "d"."FireAuditTrigger", "d"."AuditDateTimeStamp", "d"."DBAction", "d"."isDeleted"
-  )
-  SELECT
-    "d"."StaffId", "d"."StaffName", "d"."ManagerId", "d"."Department",
-    "d"."TransactionNumber",
-    'Last Transaction prior to deletion: ' + coalesce("d"."Note", concat('No Message Transaction Number: ', "d"."TransactionNumber")),
-    "d"."UserAuthorizationId",
-    "d"."SysStartTime",
-    @NowTimeStamp, -- AS SysEndTime
-    "d"."RowLevelHashKey",
-    "d"."PriorRowLevelHashKey",
-    "d"."FireAuditTrigger",
-    @NowTimeStamp,
-    @DBAction,
-    @isDeleted
-  FROM old AS "d";
-
-  RETURN OLD;
+    INSERT INTO "Audit"."HumanResourcesStaffHistory"
+    (
+      "StaffId", "StaffName", "ManagerId", "Department", "TransactionNumber", "Note", "UserAuthorizationId", "SysStartTime", "SysEndTime", "RowLevelHashKey", "PriorRowLevelHashKey", "FireAuditTrigger", "AuditDateTimeStamp", "DBAction", "IsDeleted"
+    )
+    VALUES(
+      old."StaffId", old."StaffName", old."ManagerId", old."Department",
+      old."TransactionNumber",
+      'Row was deleted',
+      old."UserAuthorizationId",
+      old."SysStartTime",
+      now(),
+      old."RowLevelHashKey",
+      old."PriorRowLevelHashKey",
+      old."FireAuditTrigger",
+      now(),
+      'D',
+      'Y'
+    );
+  RETURN NEW;
 END;
-$$;
+$function$
+;
 
-CREATE TRIGGER "HumanResources_uTd_Staff"
+CREATE TRIGGER "uTd_HumanResourcesStaff"
 AFTER DELETE
 ON "HumanResources"."Staff"
 FOR EACH ROW
-EXECUTE FUNCTION delete_HumanResourcesStaff();
+EXECUTE FUNCTION "HumanResources"."funcDeleteStaffHistory"();
 
 
 -- Author: Ralph Granata
@@ -1919,28 +1672,29 @@ EXECUTE FUNCTION delete_HumanResourcesStaff();
 -- Trigger Type: After 
 
 -- Description: PG-AuditInsertTrigger Templated Code
-
-CREATE OR REPLACE FUNCTION insert_HumanResourcesStaff()
+CREATE OR REPLACE FUNCTION "HumanResources"."funcInsertStaffHistory"()
 RETURNS TRIGGER
 LANGUAGE plpgsql
-AS $$
+AS $function$
+
 BEGIN
   IF NEW."TransactionNumber" = 1 THEN
   -- Update the current record hash keys and the temporal range of the transaction of factually being true
-  NEW."RowLevelHashKey" := "Hashing"."CreateSha256KeyFromJsonInputHumanResourcesStaff"(NEW."StaffId");
+  NEW."RowLevelHashKey" := NULL; --"Hashing"."CreateSha256KeyFromJsonInputHumanResourcesStaff"(NEW."StaffId");
   NEW."PriorRowLevelHashKey" := NULL;
   NEW."Note" := 'Row Inserted';
   NEW."FireAuditTrigger" := 'N';
   END IF;
   RETURN NEW;
 END;
-$$;
+$function$
+;
 
-CREATE TRIGGER "HumanResources_uTi_Staff"
+CREATE TRIGGER "uTi_HumanResourcesStaff"
 AFTER INSERT
 ON "HumanResources"."Staff"
 FOR EACH ROW
-EXECUTE FUNCTION insert_HumanResourcesStaff();
+EXECUTE FUNCTION "HumanResources"."funcInsertStaffHistory"();
 
 
 
@@ -1953,73 +1707,39 @@ EXECUTE FUNCTION insert_HumanResourcesStaff();
 -- Trigger Type: After 
 
 -- Description: PG-AuditInsertTrigger Templated Code
-
-CREATE OR REPLACE FUNCTION update_HumanResourcesStaff()
+CREATE OR REPLACE FUNCTION "HumanResources"."funcUpdateStaffHistory"()
 RETURNS TRIGGER
 LANGUAGE plpgsql
-AS $$
-DECLARE
-  now_timestamp TIMESTAMP := current_timestamp;
-  open_ended_sys_end_time TIMESTAMP := '9999-12-31 23:59:59.9999999';
-  fire_audit_trigger CHAR(1) := 'N';
-  db_action CHAR(1) := 'U';
-  is_deleted CHAR(1) := 'N';
-BEGIN
-  -- Retrieve the value of FireAuditTrigger from the inserted record
-  SELECT "i"."FireAuditTrigger"
-  INTO fire_audit_trigger
-  FROM deleted "d"
-  INNER JOIN new "i" ON "i"."StaffId" = "d"."StaffId"
-                    AND "i"."TransactionNumber" = "d"."TransactionNumber";
+AS $function$
 
-  -- Audit only if FireAuditTrigger = 'Y'
-  IF (fire_audit_trigger = 'Y') THEN
-    -- Insert record into audit table
+BEGIN
     INSERT INTO "Audit"."HumanResourcesStaffHistory"
     (
-      "d"."StaffId", "d"."StaffName", "d"."ManagerId", "d"."Department", "d"."TransactionNumber", "d"."Note", "d"."UserAuthorizationId", "d"."SysStartTime", "d"."SysEndTime", "d"."RowLevelHashKey", "d"."PriorRowLevelHashKey", "d"."FireAuditTrigger", "d"."AuditDateTimeStamp", "d"."DBAction", "d"."isDeleted"
+      "StaffId", "StaffName", "ManagerId", "Department", "TransactionNumber", "Note", "UserAuthorizationId", "SysStartTime", "SysEndTime", "RowLevelHashKey", "PriorRowLevelHashKey", "FireAuditTrigger", "AuditDateTimeStamp", "DBAction", "IsDeleted"
     )
-    SELECT
-      "d"."StaffId", "d"."StaffName", "d"."ManagerId", "d"."Department",
-      "d"."TransactionNumber",
-      coalesce("d"."Note", concat('No Message Transaction Number: ', "d"."TransactionNumber")),
-      "d"."UserAuthorizationId",
-      "d"."SysStartTime",
-      now_timestamp,
-      "d"."RowLevelHashKey",
-      "d"."PriorRowLevelHashKey",
-      "d"."FireAuditTrigger"
-    FROM old "d"
-    INNER JOIN new "i" ON "i"."StaffId" = "d"."StaffId"
-                      AND "i"."TransactionNumber" = "d"."TransactionNumber";
-
-    -- Update the target table
-    UPDATE "HumanResources"."Staff" AS "ut"
-    SET
-      "ut"."RowLevelHashKey" = "Hashing"."CreateSha256KeyFromJsonInputHumanResourcesStaff"("i"."StaffId"),
-      "ut"."PriorRowLevelHashKey" = "d"."RowLevelHashKey",
-      "ut"."TransactionNumber" = "d"."TransactionNumber" + 1,
-      "ut"."SysStartTime" = now_timestamp,
-      "ut"."SysEndTime" = open_ended_sys_end_time,
-      "ut"."Note" = "i"."Note",
-      "ut"."FireAuditTrigger" = 'N'
-    FROM new "i"
-    INNER JOIN old "d" ON "i"."StaffId" = "d"."StaffId"
-                        AND "i"."TransactionNumber" = "d"."TransactionNumber"
-                        AND "i"."RowLevelHashKey" = "d"."RowLevelHashKey"
-    WHERE "i"."StaffId" = "ut"."StaffId"
-      AND "i"."TransactionNumber" = "ut"."TransactionNumber"
-      AND "i"."RowLevelHashKey" = "ut"."RowLevelHashKey";
-
-  END IF;
+    VALUES(
+      old."StaffId", old."StaffName", old."ManagerId", old."Department",
+      old."TransactionNumber",
+      coalesce(old."Note", concat('No Message Transaction Number: ', old."TransactionNumber")),
+      old."UserAuthorizationId",
+      old."SysStartTime",
+      new."SysStartTime",
+      old."RowLevelHashKey",
+      old."PriorRowLevelHashKey",
+      new."FireAuditTrigger",
+      new."SysStartTime",
+      'U',
+      'N'
+    );
   RETURN NEW;
 END;
-$$;
+$function$
+;
 
-CREATE TRIGGER "HumanResources_uTu_Staff"
+CREATE TRIGGER "uTu_HumanResourcesStaff"
 AFTER UPDATE
 ON "HumanResources"."Staff"
 FOR EACH ROW
-EXECUTE FUNCTION update_HumanResourcesStaff();
+EXECUTE FUNCTION "HumanResources"."funcUpdateStaffHistory"();
 
 

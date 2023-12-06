@@ -13,7 +13,11 @@
   - These will be omitted in the final submission database if they cannot be completed.
 - Tested data insertions (without U/I/D triggers): Successful
 
+# Model Update Notes - 12/06/2023:
+- Updated Triggers (Functional)
+- Hashkey function does not work
+
 ## TODO:
 - Import and convert any new custom views.
-- Fix Converted U/I/D Triggers to PG.
 - Fix Converted Hashing function.
+- Fix Converted U/I/D Triggers to include hashing function

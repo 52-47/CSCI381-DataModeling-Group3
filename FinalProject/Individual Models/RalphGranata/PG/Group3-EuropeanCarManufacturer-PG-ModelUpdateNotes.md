@@ -1,15 +1,19 @@
 # PostgreSQL 11
-# Model Update Notes - 12/03/2023 ~ 12/05/2023
+# Model Update Notes - 12/03/2023 ~ 12/05/2023:
 - Copied SQL Server Model, changed target DB to PostgreSQL.
 - Updated all necessary Domains, Defaults, Constraints to use proper datatypes and PG syntax.
 - Converted views syntax to PG.
+- Manipulated data insertion file to work with PG.
+
+# Model Update Notes - 12/05/2023:
+- Merged all from latest SQLServerModel
+- PG doesnt support 'GENERATED AS' expressions:
+  - Created 2 triggers/functions on a table level to compute derived columns: DerivedDiscount and CategoryDescription
+- (Attempted) Conversion of U/I/D triggers - UNSUCCESSFUL.
+  - These will be omitted in the final submission database if they cannot be completed.
+- Tested data insertions (without U/I/D triggers): Successful
 
 ## TODO:
-- Merge latest history table indexing from SQLServer2019 model.
-- Import subject areas.
 - Import and convert any new custom views.
-- Fix derived columns (DerivedDiscount and CategoryDescription) by either:
-  - Creating triggers to perform derivations,
-  - Hardcoding data from derived columns.
-- Convert U/I/D Triggers to PG.
-- Convert Functions to PG.
+- Fix Converted U/I/D Triggers to PG.
+- Fix Converted Hashing function.

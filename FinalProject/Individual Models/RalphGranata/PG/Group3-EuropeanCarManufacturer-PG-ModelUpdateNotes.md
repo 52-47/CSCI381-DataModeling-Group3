@@ -14,10 +14,9 @@
 - Tested data insertions (without U/I/D triggers): Successful
 
 # Model Update Notes - 12/06/2023:
-- Updated Triggers (Functional)
-- Hashkey function does not work
+- Updated U/I/D Triggers (Functional)
+- Fixed Hash Function
 
 ## TODO:
 - Import and convert any new custom views.
-- Fix Converted Hashing function.
-- Fix Converted U/I/D Triggers to include hashing function
+- Check View / IVTFs

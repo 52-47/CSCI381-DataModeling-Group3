@@ -52,13 +52,59 @@ Any questions should be added to the document so we can discuss them at our next
 ## c. Mongo: 
 - Chuan*, Kenneth,  Ryan 
     - Revise domains/dataypes as needed
-    - Rewrite & test triggers 
-    - Rewrite hash functions
+    - Rewrite & test triggers on application side
+    - Implement hash functions
     - Add views when made
     - Create views as lookup tables for embedded subdocuments
 
 All will need to be populated with data.
 
-# 6. Presentation: 
-- When slide deck is created, subteams are responsible for presenting their model sections
-- All members will be assigned group slides to present from the SQLServerModel and outro on NACE competencies.
+# 6. Presentation Structure: 
+1. SQL Server:
+	a. Domains\User defined type Taxonomy with comments describing the purpose the of each of the Domain\User defined type objects
+    - Adding 2 or 3 Erwin reports
+
+    b. Your CDM, LDM and PDM Normalized
+	- CDM definitions shown and explained
+		- Adding 2 or 3 Erwin reports
+	- LDM Overview entities, attributes and relationships with comments
+		- Adding 2 or 3 Erwin reports
+    - PDM decisions for table, columns and foreign keys with comments
+	    - Adding 2 or 3 Erwin reports
+	    - Create a video explaining usage of Domains, Validations and Indexing
+		    - Adding 2 or 3 Erwin reports
+
+    c. Views & Custom Views
+    - Discuss excel views & custom views
+
+    d. Data Insertion Manipulation
+    - Review changes made to data insertion from start to SQL Server Implementation
+    - Show scripts used to achieve results
+   
+    e. SQL Server Triggers: Demonstrate implementation of the triggers and minimized CRUD through the usage of Views, Domains, Validations and Indexing with testing.
+    - Adding 2 or 3 Erwin reports
+  
+
+2. PostgreSQL: demonstrating the porting your SQL Server model to PostgreSQL. Testing the Triggers and creating an ERD in DBeaver.
+	a. Adding 2 or 3 Erwin report
+
+3. MySQL: demonstrating the porting your SQL Server model to MySQL. Testing the Triggers and creating an ERD in DBeaver.
+	a. Adding 2 or 3 Erwin report
+
+4. MongoDB: model demonstrating the porting your SQL Server model to MongoDB.
+	a. Using correlated subqueries to create JSON that can be loaded into Compass.
+	b. Adding 2 or 3 Erwin report
+
+5.  Summary video of your project planning and the benefits that you have learned about collaboration in a group (team) environment.
+
+
+## Group Presentation ppt Format:
+1a: OPEN, OPEN
+1b: OPEN, OPEN
+1c: OPEN
+1d: Ralph
+1e: Ralph
+2: Ralph, Savaze
+3: Mehrshad, Jimmy
+4: Chuan, Kenneth, Ryan
+5: All Members will be assigned slides in this section.

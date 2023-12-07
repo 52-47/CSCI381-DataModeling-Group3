@@ -14,7 +14,10 @@ CREATE VIEW Mongo.uvw_UserAuthorization as
 SELECT UserAuthorizationId, GroupMemberLastName, GroupMemberFirstName from DbSecurity.UserAuthorization;
 --SalesOrderVehicle Table--
 
-CREATE VIEW Mongo.uvw_Customer AS
+CREATE VIEW Mongo.uvw_Customer AS 
+SELECT CustomerId, CustomerName, CustomerTown, CustomerPostalCode, (SELECT * FROM Mongo.uvw_Country as MC where Customer.CountryId = MC.CountryId FOR JSON PATH) as Country 
+FROM Sales.Customer;
+
 
 SELECT
     SOV.SalesOrderVehicleId,
@@ -24,7 +27,7 @@ SELECT
     SOV.TransactionNumber,
     SOV.SysStartTime,
     SOV.SysEndTime,
-    SOV.RowLevelHashKey,
+    SOV.RowLevelHashKey, 
     (
         SELECT *
         FROM Mongo.uvw_SalesCategoryThreshold AS SCT
@@ -38,13 +41,8 @@ SELECT
         FOR JSON PATH
     ) AS Staff,
     (
-        SELECT
-            CustomerId,
-            CustomerName,
-            CustomerTown,
-            CustomerPostalCode,
-            (SELECT * FROM Mongo.uvw_Country as MC where MC.CountryId = C.CountryId FOR JSON PATH) as Country
-        FROM Sales.Customer AS C
+        SELECT * 
+        FROM Mongo.uvw_Customer AS C
         WHERE C.CustomerId = SOV.CustomerId
         FOR JSON PATH
     ) AS Customer,

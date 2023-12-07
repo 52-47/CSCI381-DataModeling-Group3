@@ -1,0 +1,262 @@
+[
+    {
+      "ManufacturerVehicleMakeId": 1,
+      "ManufacturerVehicleMakeName": "Ferrari",
+      "Country": [
+        {
+          "CountryId": 9,
+          "CountryName": "Italy"
+        }
+      ]
+    },
+    {
+      "ManufacturerVehicleMakeId": 2,
+      "ManufacturerVehicleMakeName": "Porsche",
+      "Country": [
+        {
+          "CountryId": 4,
+          "CountryName": "Germany"
+        }
+      ]
+    },
+    {
+      "ManufacturerVehicleMakeId": 3,
+      "ManufacturerVehicleMakeName": "Lamborghini",
+      "Country": [
+        {
+          "CountryId": 9,
+          "CountryName": "Italy"
+        }
+      ]
+    },
+    {
+      "ManufacturerVehicleMakeId": 4,
+      "ManufacturerVehicleMakeName": "Aston Martin",
+      "Country": [
+        {
+          "CountryId": 7,
+          "CountryName": "United Kingdom"
+        }
+      ]
+    },
+    {
+      "ManufacturerVehicleMakeId": 5,
+      "ManufacturerVehicleMakeName": "Bentley",
+      "Country": [
+        {
+          "CountryId": 7,
+          "CountryName": "United Kingdom"
+        }
+      ]
+    },
+    {
+      "ManufacturerVehicleMakeId": 6,
+      "ManufacturerVehicleMakeName": "Rolls Royce",
+      "Country": [
+        {
+          "CountryId": 7,
+          "CountryName": "United Kingdom"
+        }
+      ]
+    },
+    {
+      "ManufacturerVehicleMakeId": 7,
+      "ManufacturerVehicleMakeName": "Maybach",
+      "Country": [
+        {
+          "CountryId": 4,
+          "CountryName": "Germany"
+        }
+      ]
+    },
+    {
+      "ManufacturerVehicleMakeId": 8,
+      "ManufacturerVehicleMakeName": "Mercedes",
+      "Country": [
+        {
+          "CountryId": 4,
+          "CountryName": "Germany"
+        }
+      ]
+    },
+    {
+      "ManufacturerVehicleMakeId": 9,
+      "ManufacturerVehicleMakeName": "Alfa Romeo",
+      "Country": [
+        {
+          "CountryId": 9,
+          "CountryName": "Italy"
+        }
+      ]
+    },
+    {
+      "ManufacturerVehicleMakeId": 10,
+      "ManufacturerVehicleMakeName": "Austi",
+      "Country": [
+        {
+          "CountryId": 7,
+          "CountryName": "United Kingdom"
+        }
+      ]
+    },
+    {
+      "ManufacturerVehicleMakeId": 11,
+      "ManufacturerVehicleMakeName": "BMW",
+      "Country": [
+        {
+          "CountryId": 4,
+          "CountryName": "Germany"
+        }
+      ]
+    },
+    {
+      "ManufacturerVehicleMakeId": 12,
+      "ManufacturerVehicleMakeName": "Bugatti",
+      "Country": [
+        {
+          "CountryId": 6,
+          "CountryName": "France"
+        }
+      ]
+    },
+    {
+      "ManufacturerVehicleMakeId": 13,
+      "ManufacturerVehicleMakeName": "Citroe",
+      "Country": [
+        {
+          "CountryId": 6,
+          "CountryName": "France"
+        }
+      ]
+    },
+    {
+      "ManufacturerVehicleMakeId": 14,
+      "ManufacturerVehicleMakeName": "Delahaye",
+      "Country": [
+        {
+          "CountryId": 6,
+          "CountryName": "France"
+        }
+      ]
+    },
+    {
+      "ManufacturerVehicleMakeId": 15,
+      "ManufacturerVehicleMakeName": "Delorea",
+      "Country": [
+        {
+          "CountryId": 10,
+          "CountryName": "United States"
+        }
+      ]
+    },
+    {
+      "ManufacturerVehicleMakeId": 16,
+      "ManufacturerVehicleMakeName": "Jaguar",
+      "Country": [
+        {
+          "CountryId": 7,
+          "CountryName": "United Kingdom"
+        }
+      ]
+    },
+    {
+      "ManufacturerVehicleMakeId": 17,
+      "ManufacturerVehicleMakeName": "Lagonda",
+      "Country": [
+        {
+          "CountryId": 9,
+          "CountryName": "Italy"
+        }
+      ]
+    },
+    {
+      "ManufacturerVehicleMakeId": 18,
+      "ManufacturerVehicleMakeName": "McLaren",
+      "Country": [
+        {
+          "CountryId": 7,
+          "CountryName": "United Kingdom"
+        }
+      ]
+    },
+    {
+      "ManufacturerVehicleMakeId": 19,
+      "ManufacturerVehicleMakeName": "Morga",
+      "Country": [
+        {
+          "CountryId": 7,
+          "CountryName": "United Kingdom"
+        }
+      ]
+    },
+    {
+      "ManufacturerVehicleMakeId": 20,
+      "ManufacturerVehicleMakeName": "Noble",
+      "Country": [
+        {
+          "CountryId": 7,
+          "CountryName": "United Kingdom"
+        }
+      ]
+    },
+    {
+      "ManufacturerVehicleMakeId": 21,
+      "ManufacturerVehicleMakeName": "Triumph",
+      "Country": [
+        {
+          "CountryId": 7,
+          "CountryName": "United Kingdom"
+        }
+      ]
+    },
+    {
+      "ManufacturerVehicleMakeId": 22,
+      "ManufacturerVehicleMakeName": "Trabant",
+      "Country": [
+        {
+          "CountryId": 4,
+          "CountryName": "Germany"
+        }
+      ]
+    },
+    {
+      "ManufacturerVehicleMakeId": 23,
+      "ManufacturerVehicleMakeName": "Peugeot",
+      "Country": [
+        {
+          "CountryId": 4,
+          "CountryName": "Germany"
+        }
+      ]
+    },
+    {
+      "ManufacturerVehicleMakeId": 24,
+      "ManufacturerVehicleMakeName": "Reliant",
+      "Country": [
+        {
+          "CountryId": 6,
+          "CountryName": "France"
+        }
+      ]
+    },
+    {
+      "ManufacturerVehicleMakeId": 25,
+      "ManufacturerVehicleMakeName": "Riley",
+      "Country": [
+        {
+          "CountryId": 7,
+          "CountryName": "United Kingdom"
+        }
+      ]
+    },
+    {
+      "ManufacturerVehicleMakeId": 26,
+      "ManufacturerVehicleMakeName": "Cadillac",
+      "Country": [
+        {
+          "CountryId": 10,
+          "CountryName": "United States"
+        }
+      ]
+    }
+  ]

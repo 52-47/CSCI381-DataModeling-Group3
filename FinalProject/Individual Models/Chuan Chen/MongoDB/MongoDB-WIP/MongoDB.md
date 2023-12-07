@@ -9,6 +9,7 @@
 3. Presentations
     MongoDB: model demonstrating the porting your SQL Server model to MongoDB.
         a. Using correlated subqueries to create JSON that can be loaded into Compass.
+            - Showcase use of SQL commands to generate JSON files along with nested JSON files within eachother to mimick a relational database.
         b. Adding 2 or 3 Erwin report
             - Views
             - Tables

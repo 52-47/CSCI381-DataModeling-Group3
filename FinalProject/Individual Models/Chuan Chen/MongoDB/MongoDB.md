@@ -1,6 +1,4 @@
-
 #TSQL -> MongoDB
-
 
 1. Create MongoDB Model On Erwin by using migration methods.
     - Create subdocuments to embed into each document. 
@@ -9,3 +7,9 @@
     - refer to erwin model to write sql command to generate JSON based on current data.
     - after generating JSON prettify and paste into model.
 3. Presentations
+    MongoDB: model demonstrating the porting your SQL Server model to MongoDB.
+        a. Using correlated subqueries to create JSON that can be loaded into Compass.
+        b. Adding 2 or 3 Erwin report
+            - Views
+            - Tables
+            - Domains

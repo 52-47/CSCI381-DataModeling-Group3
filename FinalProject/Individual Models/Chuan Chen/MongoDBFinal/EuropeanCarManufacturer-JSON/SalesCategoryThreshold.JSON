@@ -1,0 +1,32 @@
+[
+    {
+      "SalesCategoryThresholdId": 1,
+      "LowerThreshold": 75001.00,
+      "UpperThreshold": 100000.00
+    },
+    {
+      "SalesCategoryThresholdId": 2,
+      "LowerThreshold": 50001.00,
+      "UpperThreshold": 75000.00
+    },
+    {
+      "SalesCategoryThresholdId": 3,
+      "LowerThreshold": 25001.00,
+      "UpperThreshold": 50000.00
+    },
+    {
+      "SalesCategoryThresholdId": 4,
+      "LowerThreshold": 150001.00,
+      "UpperThreshold": 250000.00
+    },
+    {
+      "SalesCategoryThresholdId": 5,
+      "LowerThreshold": 100001.00,
+      "UpperThreshold": 150000.00
+    },
+    {
+      "SalesCategoryThresholdId": 6,
+      "LowerThreshold": 100.00,
+      "UpperThreshold": 25000.00
+    }
+  ]

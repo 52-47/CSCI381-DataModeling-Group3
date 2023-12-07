@@ -1,0 +1,42 @@
+[
+    {
+      "CountryId": 1,
+      "CountryName": "Belgium"
+    },
+    {
+      "CountryId": 2,
+      "CountryName": "Switzerland"
+    },
+    {
+      "CountryId": 3,
+      "CountryName": "China"
+    },
+    {
+      "CountryId": 4,
+      "CountryName": "Germany"
+    },
+    {
+      "CountryId": 5,
+      "CountryName": "Spain"
+    },
+    {
+      "CountryId": 6,
+      "CountryName": "France"
+    },
+    {
+      "CountryId": 7,
+      "CountryName": "United Kingdom"
+    },
+    {
+      "CountryId": 8,
+      "CountryName": "India"
+    },
+    {
+      "CountryId": 9,
+      "CountryName": "Italy"
+    },
+    {
+      "CountryId": 10,
+      "CountryName": "United States"
+    }
+  ]

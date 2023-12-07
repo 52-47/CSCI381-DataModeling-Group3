@@ -14,9 +14,12 @@
 - Tested data insertions (without U/I/D triggers): Successful
 
 # Model Update Notes - 12/06/2023:
-- Updated U/I/D Triggers (Functional)
-- Fixed Hash Function
+- Updated U/I/D Triggers (Functional).
+- Fixed Hash Function.
+- Tested Data Insertions/Updates/Deletes: Triggers, Hash and Transaction++ successful.
+- Could not implement ivtf...Pky function without specifying rows/data types in the return.
+  - Converted ivtf...pkyOf to a function that accepts an int PK argument and returns a view.
+  - Must call function, then can select from newly created view (and join to see audit trail history).
 
 ## TODO:
 - Import and convert any new custom views.
-- Check View / IVTFs

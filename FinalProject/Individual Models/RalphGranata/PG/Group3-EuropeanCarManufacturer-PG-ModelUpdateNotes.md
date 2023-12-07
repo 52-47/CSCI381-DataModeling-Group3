@@ -21,5 +21,9 @@
   - Converted ivtf...pkyOf to a function that accepts an int PK argument and returns a view.
   - Must call function, then can select from newly created view (and join to see audit trail history).
 
+# Model Update Notes: 12/07/2023
+- Removed SalesCategoryThreshold (and history) tables.
+- Replaced SalesCategoryThresholdId (FK) with CategoryDescription in SalesOrderVehicle (and history) as a dervied column
+  
 ## TODO:
 - Import and convert any new custom views.

@@ -51,7 +51,6 @@
 - Removed StockCode from VehicleOrderDetails table and made ManufacturerVehicleStockId NOT NULL.
 - Revised data insertion to include the appropriate ManufacturerVehicleStockId for each row.
 
-
 # Model Update Notes - 12/03/2023
 - Merged Chuan's views & updated triggers.
 - Updated view schemas.
@@ -66,9 +65,9 @@
 - Updated DDL.
 - Added subject areas to model.
 
+# Model Update Notes: 12/07/2023
+- Removed SalesCategoryThreshold (and history) tables.
+- Replaced SalesCategoryThresholdId (FK) with CategoryDescription in SalesOrderVehicle (and history) as a dervied column
+  
 ## TODO:
-- Test Triggers on all tables
-
-- Create custom views - Remaining: (Jimmy, Ryan, Kenneth, Savaze).
-- Add subject areas.
 - Generate Reports for presentation.

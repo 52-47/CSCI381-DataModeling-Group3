@@ -99,9 +99,9 @@ All will need to be populated with data.
 
 
 ## Group Presentation ppt Format:
-1a: OPEN, OPEN
-1b: OPEN, OPEN
-1c: OPEN
+1a: Ryan, OPEN
+1b: Savaze, Kenneth
+1c: Mehrshad
 1d: Ralph
 1e: Ralph
 2: Ralph, Savaze

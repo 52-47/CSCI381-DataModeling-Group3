@@ -12,22 +12,38 @@ SELECT CountryId, CountryName from Locale.Country;
 
 CREATE VIEW Mongo.uvw_UserAuthorization as 
 SELECT UserAuthorizationId, GroupMemberLastName, GroupMemberFirstName from DbSecurity.UserAuthorization;
---SalesOrderVehicle Table--
 
 CREATE VIEW Mongo.uvw_Customer AS 
-SELECT CustomerId, CustomerName, CustomerTown, CustomerPostalCode, (SELECT * FROM Mongo.uvw_Country as MC where Customer.CountryId = MC.CountryId FOR JSON PATH) as Country 
+SELECT 
+CustomerId, 
+CustomerName, 
+CustomerTown, 
+CustomerPostalCode, 
+(SELECT * FROM Mongo.uvw_Country as MC where Customer.CountryId = MC.CountryId FOR JSON PATH) as Country 
 FROM Sales.Customer;
 
 
+
+--SalesCategoryThreshold Collection--
+SELECT * FROM Mongo.uvw_SalesCategoryThreshold FOR JSON PATH
+
+--Staff Collection--
+SELECT * FROM Mongo.uvw_Staff FOR JSON PATH
+
+--Country Collection--
+SELECT * FROM Mongo.uvw_Country FOR JSON PATH
+
+--UserAuthorization Collection--
+SELECT * FROM Mongo.uvw_UserAuthorization FOR JSON PATH
+
+--Customer Collection--
+SELECT * FROM Mongo.uvw_Customer FOR JSON PATH
+
+--SalesOrderVehicle Collection--
 SELECT
     SOV.SalesOrderVehicleId,
-    SOV.InvoiceNumber,
     SOV.TotalSalePrice,
     SOV.SaleDate,
-    SOV.TransactionNumber,
-    SOV.SysStartTime,
-    SOV.SysEndTime,
-    SOV.RowLevelHashKey, 
     (
         SELECT *
         FROM Mongo.uvw_SalesCategoryThreshold AS SCT
@@ -54,8 +70,3 @@ SELECT
 	) AS UserAuthorization
 FROM Sales.SalesOrderVehicle AS SOV
 FOR JSON PATH, ROOT('SalesOrderVehicles'), INCLUDE_NULL_VALUES;
-
---Staff--
-
-SELECT * FROM HumanResources.Staff as HRS 
-INNER JOIN 

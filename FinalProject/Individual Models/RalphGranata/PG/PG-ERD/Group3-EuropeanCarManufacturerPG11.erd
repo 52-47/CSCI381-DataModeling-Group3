@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<diagram version="1" name="Group3-EuropeanCarManufacturerPG11">
+	<entities>
+		<data-source id="postgres-jdbc-18ab9f9f0b1-3ef21a6b8757abed">
+			<entity id="1" name="HumanResourcesStaffHistory" fq-name="&quot;Audit&quot;.&quot;HumanResourcesStaffHistory&quot;">
+				<path name="Audit"/>
+				<path name="Group3-EuropeanCarManufacturerPG11"/>
+			</entity>
+			<entity id="2" name="LocaleCountryHistory" fq-name="&quot;Audit&quot;.&quot;LocaleCountryHistory&quot;">
+				<path name="Audit"/>
+				<path name="Group3-EuropeanCarManufacturerPG11"/>
+			</entity>
+			<entity id="3" name="ProductionManufacturerModelHistory" fq-name="&quot;Audit&quot;.&quot;ProductionManufacturerModelHistory&quot;">
+				<path name="Audit"/>
+				<path name="Group3-EuropeanCarManufacturerPG11"/>
+			</entity>
+			<entity id="4" name="ProductionManufacturerVehicleMakeHistory" fq-name="&quot;Audit&quot;.&quot;ProductionManufacturerVehicleMakeHistory&quot;">
+				<path name="Audit"/>
+				<path name="Group3-EuropeanCarManufacturerPG11"/>
+			</entity>
+			<entity id="5" name="ProductionManufacturerVehicleStockHistory" fq-name="&quot;Audit&quot;.&quot;ProductionManufacturerVehicleStockHistory&quot;">
+				<path name="Audit"/>
+				<path name="Group3-EuropeanCarManufacturerPG11"/>
+			</entity>
+			<entity id="6" name="SalesCustomerHistory" fq-name="&quot;Audit&quot;.&quot;SalesCustomerHistory&quot;">
+				<path name="Audit"/>
+				<path name="Group3-EuropeanCarManufacturerPG11"/>
+			</entity>
+			<entity id="7" name="SalesSalesOrderVehicleDetailHistory" fq-name="&quot;Audit&quot;.&quot;SalesSalesOrderVehicleDetailHistory&quot;">
+				<path name="Audit"/>
+				<path name="Group3-EuropeanCarManufacturerPG11"/>
+			</entity>
+			<entity id="8" name="SalesSalesOrderVehicleHistory" fq-name="&quot;Audit&quot;.&quot;SalesSalesOrderVehicleHistory&quot;">
+				<path name="Audit"/>
+				<path name="Group3-EuropeanCarManufacturerPG11"/>
+			</entity>
+			<entity id="9" name="vwFindUniqueTablePkyHumanResourcesStaff" fq-name="&quot;Audit&quot;.&quot;vwFindUniqueTablePkyHumanResourcesStaff&quot;">
+				<path name="Audit"/>
+				<path name="Group3-EuropeanCarManufacturerPG11"/>
+			</entity>
+			<entity id="10" name="vwFindUniqueTablePkyLocaleCountry" fq-name="&quot;Audit&quot;.&quot;vwFindUniqueTablePkyLocaleCountry&quot;">
+				<path name="Audit"/>
+				<path name="Group3-EuropeanCarManufacturerPG11"/>
+			</entity>
+			<entity id="11" name="vwFindUniqueTablePkyProductionManufacturerModel" fq-name="&quot;Audit&quot;.&quot;vwFindUniqueTablePkyProductionManufacturerModel&quot;">
+				<path name="Audit"/>
+				<path name="Group3-EuropeanCarManufacturerPG11"/>
+			</entity>
+			<entity id="12" name="vwFindUniqueTablePkyProductionManufacturerVehicleMake" fq-name="&quot;Audit&quot;.&quot;vwFindUniqueTablePkyProductionManufacturerVehicleMake&quot;">
+				<path name="Audit"/>
+				<path name="Group3-EuropeanCarManufacturerPG11"/>
+			</entity>
+			<entity id="13" name="vwFindUniqueTablePkyProductionManufacturerVehicleStock" fq-name="&quot;Audit&quot;.&quot;vwFindUniqueTablePkyProductionManufacturerVehicleStock&quot;">
+				<path name="Audit"/>
+				<path name="Group3-EuropeanCarManufacturerPG11"/>
+			</entity>
+			<entity id="14" name="vwFindUniqueTablePkySalesCustomer" fq-name="&quot;Audit&quot;.&quot;vwFindUniqueTablePkySalesCustomer&quot;">
+				<path name="Audit"/>
+				<path name="Group3-EuropeanCarManufacturerPG11"/>
+			</entity>
+			<entity id="15" name="vwFindUniqueTablePkySalesSalesOrderVehicle" fq-name="&quot;Audit&quot;.&quot;vwFindUniqueTablePkySalesSalesOrderVehicle&quot;">
+				<path name="Audit"/>
+				<path name="Group3-EuropeanCarManufacturerPG11"/>
+			</entity>
+			<entity id="16" name="vwFindUniqueTablePkySalesSalesOrderVehicleDetail" fq-name="&quot;Audit&quot;.&quot;vwFindUniqueTablePkySalesSalesOrderVehicleDetail&quot;">
+				<path name="Audit"/>
+				<path name="Group3-EuropeanCarManufacturerPG11"/>
+			</entity>
+			<entity id="17" name="uvw_ChuanCustomerCountry" fq-name="&quot;CustomViews&quot;.&quot;uvw_ChuanCustomerCountry&quot;">
+				<path name="CustomViews"/>
+				<path name="Group3-EuropeanCarManufacturerPG11"/>
+			</entity>
+			<entity id="18" name="uvw_ChuanMakeCountry" fq-name="&quot;CustomViews&quot;.&quot;uvw_ChuanMakeCountry&quot;">
+				<path name="CustomViews"/>
+				<path name="Group3-EuropeanCarManufacturerPG11"/>
+			</entity>
+			<entity id="19" name="uvw_ChuanModelMake" fq-name="&quot;CustomViews&quot;.&quot;uvw_ChuanModelMake&quot;">
+				<path name="CustomViews"/>
+				<path name="Group3-EuropeanCarManufacturerPG11"/>
+			</entity>
+			<entity id="20" name="uvw_ChuanStaffDiscountGiven" fq-name="&quot;CustomViews&quot;.&quot;uvw_ChuanStaffDiscountGiven&quot;">
+				<path name="CustomViews"/>
+				<path name="Group3-EuropeanCarManufacturerPG11"/>
+			</entity>
+			<entity id="21" name="uvw_MehrshadYearlyCustomerSales" fq-name="&quot;CustomViews&quot;.&quot;uvw_MehrshadYearlyCustomerSales&quot;">
+				<path name="CustomViews"/>
+				<path name="Group3-EuropeanCarManufacturerPG11"/>
+			</entity>
+			<entity id="22" name="uvw_MehrshadYearlySalesProfits" fq-name="&quot;CustomViews&quot;.&quot;uvw_MehrshadYearlySalesProfits&quot;">
+				<path name="CustomViews"/>
+				<path name="Group3-EuropeanCarManufacturerPG11"/>
+			</entity>
+			<entity id="23" name="uvw_MershadVehicleCost" fq-name="&quot;CustomViews&quot;.&quot;uvw_MershadVehicleCost&quot;">
+				<path name="CustomViews"/>
+				<path name="Group3-EuropeanCarManufacturerPG11"/>
+			</entity>
+			<entity id="24" name="uvw_RalphMakeModelPartsCost" fq-name="&quot;CustomViews&quot;.&quot;uvw_RalphMakeModelPartsCost&quot;">
+				<path name="CustomViews"/>
+				<path name="Group3-EuropeanCarManufacturerPG11"/>
+			</entity>
+			<entity id="25" name="uvw_Ralph_EmployeeManager" fq-name="&quot;CustomViews&quot;.&quot;uvw_Ralph_EmployeeManager&quot;">
+				<path name="CustomViews"/>
+				<path name="Group3-EuropeanCarManufacturerPG11"/>
+			</entity>
+			<entity id="26" name="UserAuthorization" fq-name="&quot;DbSecurity&quot;.&quot;UserAuthorization&quot;">
+				<path name="DbSecurity"/>
+				<path name="Group3-EuropeanCarManufacturerPG11"/>
+			</entity>
+			<entity id="27" name="Staff" fq-name="&quot;HumanResources&quot;.&quot;Staff&quot;">
+				<path name="HumanResources"/>
+				<path name="Group3-EuropeanCarManufacturerPG11"/>
+			</entity>
+			<entity id="28" name="Country" fq-name="&quot;Locale&quot;.&quot;Country&quot;">
+				<path name="Locale"/>
+				<path name="Group3-EuropeanCarManufacturerPG11"/>
+			</entity>
+			<entity id="29" name="Customer" fq-name="&quot;Sales&quot;.&quot;Customer&quot;">
+				<path name="Sales"/>
+				<path name="Group3-EuropeanCarManufacturerPG11"/>
+			</entity>
+			<entity id="30" name="SalesOrderVehicle" fq-name="&quot;Sales&quot;.&quot;SalesOrderVehicle&quot;">
+				<path name="Sales"/>
+				<path name="Group3-EuropeanCarManufacturerPG11"/>
+			</entity>
+			<entity id="31" name="SalesOrderVehicleDetail" fq-name="&quot;Sales&quot;.&quot;SalesOrderVehicleDetail&quot;">
+				<path name="Sales"/>
+				<path name="Group3-EuropeanCarManufacturerPG11"/>
+			</entity>
+			<entity id="32" name="uvw_ChuanStaffSales" fq-name="&quot;Sales&quot;.&quot;uvw_ChuanStaffSales&quot;">
+				<path name="Sales"/>
+				<path name="Group3-EuropeanCarManufacturerPG11"/>
+			</entity>
+			<entity id="33" name="uvw_PivotTable" fq-name="&quot;Sales&quot;.&quot;uvw_PivotTable&quot;">
+				<path name="Sales"/>
+				<path name="Group3-EuropeanCarManufacturerPG11"/>
+			</entity>
+			<entity id="34" name="uvw_Sales2018" fq-name="&quot;Sales&quot;.&quot;uvw_Sales2018&quot;">
+				<path name="Sales"/>
+				<path name="Group3-EuropeanCarManufacturerPG11"/>
+			</entity>
+			<entity id="35" name="uvw_SalesByCountry" fq-name="&quot;Sales&quot;.&quot;uvw_SalesByCountry&quot;">
+				<path name="Sales"/>
+				<path name="Group3-EuropeanCarManufacturerPG11"/>
+			</entity>
+			<entity id="36" name="uvw_SalesText" fq-name="&quot;Sales&quot;.&quot;uvw_SalesText&quot;">
+				<path name="Sales"/>
+				<path name="Group3-EuropeanCarManufacturerPG11"/>
+			</entity>
+			<entity id="37" name="uvw_StockPrices" fq-name="&quot;Sales&quot;.&quot;uvw_StockPrices&quot;">
+				<path name="Sales"/>
+				<path name="Group3-EuropeanCarManufacturerPG11"/>
+			</entity>
+			<entity id="38" name="uvw_YearlySales" fq-name="&quot;Sales&quot;.&quot;uvw_YearlySales&quot;">
+				<path name="Sales"/>
+				<path name="Group3-EuropeanCarManufacturerPG11"/>
+			</entity>
+		</data-source>
+	</entities>
+	<relations>
+		<relation name="FK_Staff_UserAuthorization" fq-name="&quot;HumanResources&quot;.&quot;Staff&quot;.&quot;FK_Staff_UserAuthorization&quot;" type="fk" pk-ref="26" fk-ref="27"/>
+		<relation name="FK_Country_UserAuthorization" fq-name="&quot;Locale&quot;.&quot;Country&quot;.&quot;FK_Country_UserAuthorization&quot;" type="fk" pk-ref="26" fk-ref="28"/>
+		<relation name="FK_Customer_UserAuthorization" fq-name="&quot;Sales&quot;.&quot;Customer&quot;.&quot;FK_Customer_UserAuthorization&quot;" type="fk" pk-ref="26" fk-ref="29"/>
+		<relation name="FK_SalesOrderVehicle_UserAuthorization" fq-name="&quot;Sales&quot;.&quot;SalesOrderVehicle&quot;.&quot;FK_SalesOrderVehicle_UserAuthorization&quot;" type="fk" pk-ref="26" fk-ref="30"/>
+		<relation name="FK_SalesOrderVehicleDetail_UserAuthorization" fq-name="&quot;Sales&quot;.&quot;SalesOrderVehicleDetail&quot;.&quot;FK_SalesOrderVehicleDetail_UserAuthorization&quot;" type="fk" pk-ref="26" fk-ref="31"/>
+		<relation name="FK_Staff_Staff" fq-name="&quot;HumanResources&quot;.&quot;Staff&quot;.&quot;FK_Staff_Staff&quot;" type="fk" pk-ref="27" fk-ref="27"/>
+		<relation name="FK_SalesOrderVehicle_Staff" fq-name="&quot;Sales&quot;.&quot;SalesOrderVehicle&quot;.&quot;FK_SalesOrderVehicle_Staff&quot;" type="fk" pk-ref="27" fk-ref="30"/>
+		<relation name="FK_Customer_Country" fq-name="&quot;Sales&quot;.&quot;Customer&quot;.&quot;FK_Customer_Country&quot;" type="fk" pk-ref="28" fk-ref="29"/>
+		<relation name="FK_SalesOrderVehicle_Customer" fq-name="&quot;Sales&quot;.&quot;SalesOrderVehicle&quot;.&quot;FK_SalesOrderVehicle_Customer&quot;" type="fk" pk-ref="29" fk-ref="30"/>
+		<relation name="FK_SalesOrderVehicleDetail_SalesOrderVehicle" fq-name="&quot;Sales&quot;.&quot;SalesOrderVehicleDetail&quot;.&quot;FK_SalesOrderVehicleDetail_SalesOrderVehicle&quot;" type="fk" pk-ref="30" fk-ref="31"/>
+	</relations>
+</diagram>

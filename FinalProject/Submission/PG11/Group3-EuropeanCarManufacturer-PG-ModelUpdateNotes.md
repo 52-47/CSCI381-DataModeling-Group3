@@ -24,3 +24,6 @@
 # Model Update Notes: 12/07/2023
 - Removed SalesCategoryThreshold (and history) tables.
 - Replaced SalesCategoryThresholdId (FK) with CategoryDescription in SalesOrderVehicle (and history) as a dervied column
+
+# Model Update Notes: 12/08/2023
+- Fixed insertion trigger bug

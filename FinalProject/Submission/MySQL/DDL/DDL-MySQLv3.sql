@@ -264,33 +264,6 @@ ALTER TABLE `DbSecurity.UserAuthorization`
 ADD CONSTRAINT `CK_DbSecurity_UserAuthorization_SysEndTime`
 CHECK ( `SysEndTime` >= `SysStartTime` ) ;
 
-CREATE TABLE IF NOT EXISTS `HumanResources.Staff`
-(
-	`StaffId` INTEGER AUTO_INCREMENT  COMMENT 'A unique identifier for staff members' NOT NULL ,
-	`ManagerId` INTEGER COMMENT 'The ID of a staff member that supervises an employee' NULL ,
-	`StaffName` VARCHAR(60) COMMENT 'The full name of a staff member' NOT NULL ,
-	`Department` VARCHAR(15) COMMENT 'The department name a staff member works in' NULL ,
-	`UserAuthorizationId` INTEGER  DEFAULT 1 COMMENT 'A unique identifier for UserAuthorizationIds' NOT NULL ,
-	`SysStartTime` DATETIME  DEFAULT CURRENT_TIMESTAMP COMMENT 'The start time for a system transaction' NULL ,
-	`SysEndTime` DATETIME  DEFAULT CURRENT_TIMESTAMP COMMENT 'The end time for a system transaction' NULL ,
-	`RowLevelHashKey` BLOB COMMENT 'Current row hash key representing all combined columns' NULL ,
-	`TransactionNumber` INTEGER  DEFAULT 1 COMMENT 'The transaction number in a series of database transactions' NOT NULL ,
-	`Note` VARCHAR(100)  DEFAULT 'Row was inserted' COMMENT 'A note regarding the database transaction' NULL ,
-	`PriorRowLevelHashKey` BLOB COMMENT 'The prior transaction row level hash key' NULL ,
-	`FireAuditTrigger` CHAR(1)  DEFAULT 'N' COMMENT 'A flag to indicate if an audit trigger should be fired' NOT NULL ,
-	 CONSTRAINT XPKStaff PRIMARY KEY  ( `StaffId` ASC )
-)
-COMMENT = 'A staff member of the business who sells vehicles to customers';
-
-
-ALTER TABLE `HumanResources.Staff`
-ADD CONSTRAINT `CK_HumanResources_Staff_SysStartTime`
-CHECK ( `SysEndTime` >= `SysStartTime` ) ;
-
-ALTER TABLE `HumanResources.Staff`
-ADD CONSTRAINT `CK_HumanResources_Staff_FireAuditTrigger`
-CHECK ( `FireAuditTrigger`='Y' OR `FireAuditTrigger`='N' ) ;
-
 CREATE TABLE IF NOT EXISTS `Locale.Country`
 (
 	`CountryId` INTEGER AUTO_INCREMENT  COMMENT 'A unique identifier for countries' NOT NULL ,
@@ -306,7 +279,10 @@ CREATE TABLE IF NOT EXISTS `Locale.Country`
 	`Note` VARCHAR(100)  DEFAULT 'Row was inserted' COMMENT 'A note regarding the database transaction' NULL ,
 	`PriorRowLevelHashKey` BLOB COMMENT 'The prior transaction row level hash key' NULL ,
 	`FireAuditTrigger` CHAR(1)  DEFAULT 'N' COMMENT 'A flag to indicate if an audit trigger should be fired' NOT NULL ,
-	 CONSTRAINT PK_Country PRIMARY KEY  ( `CountryId` ASC )
+	 CONSTRAINT PK_Country PRIMARY KEY  ( `CountryId` ASC ),
+	CONSTRAINT `FK_Locale.Country_DbSecurity.UserAuthorization` FOREIGN KEY (`UserAuthorizationId`) REFERENCES `DbSecurity.UserAuthorization` (`UserAuthorizationId`)
+		ON DELETE NO ACTION 
+		ON UPDATE NO ACTION 
 )
 COMMENT = 'A country or territory in the world';
 
@@ -331,12 +307,18 @@ ALTER TABLE `Locale.Country`
 ADD CONSTRAINT `CK_Locale_Country_FireAuditTrigger`
 CHECK ( `FireAuditTrigger`='Y' OR `FireAuditTrigger`='N' ) ;
 
-CREATE TABLE IF NOT EXISTS `Production.ManufacturerModel`
+CREATE TABLE IF NOT EXISTS `Sales.Customer`
 (
-	`ManufacturerModelId` INTEGER AUTO_INCREMENT  COMMENT 'A unique identifier for vehicle models' NOT NULL ,
-	`ManufacturerModelName` VARCHAR(35) COMMENT 'The name of a vehicle model' NOT NULL ,
-	`ManufacturerModelVariant` VARCHAR(35) COMMENT 'The name of a vehicle model variant if applicable' NULL ,
-	`ManufacturerVehicleMakeId` INTEGER COMMENT 'A unique identifier for vehicle makes' NOT NULL ,
+	`CustomerId` INTEGER AUTO_INCREMENT  COMMENT 'A unique identifier for customers' NOT NULL ,
+	`CustomerName` VARCHAR(65) COMMENT 'The full name of a customer' NOT NULL ,
+	`CustomerAddress1` VARCHAR(60) COMMENT 'The street address of a customer' NOT NULL ,
+	`CustomerAddress2` VARCHAR(60) COMMENT 'The extended street address of a customer' NULL ,
+	`CustomerTown` VARCHAR(30) COMMENT 'The town or city a customer resides in' NOT NULL ,
+	`CustomerPostalCode` VARCHAR(9) COMMENT 'The postal code of a customer if applicable' NULL ,
+	`CountryId` INTEGER COMMENT 'A unique identifier for countries' NOT NULL ,
+	`IsCustomerReseller` INTEGER COMMENT 'Flag to determine if a customer is a reseller' NOT NULL ,
+	`IsCustomerCreditRisk` INTEGER COMMENT 'Flag to determine if customer is a credit risk' NOT NULL ,
+	`SpendCapacity` VARCHAR(15) COMMENT 'The spend capacity of a customer' NULL ,
 	`UserAuthorizationId` INTEGER  DEFAULT 1 COMMENT 'A unique identifier for UserAuthorizationIds' NOT NULL ,
 	`SysStartTime` DATETIME  DEFAULT CURRENT_TIMESTAMP COMMENT 'The start time for a system transaction' NULL ,
 	`SysEndTime` DATETIME  DEFAULT CURRENT_TIMESTAMP COMMENT 'The end time for a system transaction' NULL ,
@@ -345,21 +327,115 @@ CREATE TABLE IF NOT EXISTS `Production.ManufacturerModel`
 	`Note` VARCHAR(100)  DEFAULT 'Row was inserted' COMMENT 'A note regarding the database transaction' NULL ,
 	`PriorRowLevelHashKey` BLOB COMMENT 'The prior transaction row level hash key' NULL ,
 	`FireAuditTrigger` CHAR(1)  DEFAULT 'N' COMMENT 'A flag to indicate if an audit trigger should be fired' NOT NULL ,
-	 CONSTRAINT PK_Model_1 PRIMARY KEY  ( `ManufacturerModelId` ASC )
+	 CONSTRAINT PK_Customer PRIMARY KEY  ( `CustomerId` ASC ),
+	CONSTRAINT `FK_Sales.Customer_Locale.Country` FOREIGN KEY (`CountryId`) REFERENCES `Locale.Country` (`CountryId`)
+		ON DELETE NO ACTION 
+		ON UPDATE NO ACTION ,
+	CONSTRAINT `FK_Sales.Customer_DbSecurity.UserAuthorization` FOREIGN KEY (`UserAuthorizationId`) REFERENCES `DbSecurity.UserAuthorization` (`UserAuthorizationId`)
+		ON DELETE NO ACTION 
+		ON UPDATE NO ACTION 
 )
-COMMENT = 'The model of a particular vehicle created by the manufacturer';
+COMMENT = 'A person who purchases a vehicle from the business';
 
 
-ALTER TABLE `Production.ManufacturerModel`
-ADD CONSTRAINT `CK_Production_ManufacturerModel_SysStartTime`
+ALTER TABLE `Sales.Customer`
+ADD CONSTRAINT `CK_Sales_Customer_IsCustomerReseller`
+CHECK ( `IsCustomerReseller` = 0 OR `IsCustomerReseller` = 1 ) ;
+
+ALTER TABLE `Sales.Customer`
+ADD CONSTRAINT `BCK_TemplateTable_ValidBit_1125086184`
+CHECK ( `IsCustomerCreditRisk` = 0 OR `IsCustomerCreditRisk` = 1 ) ;
+
+ALTER TABLE `Sales.Customer`
+ADD CONSTRAINT `CK_Sales_Customer_SysStartTime`
 CHECK ( `SysEndTime` >= `SysStartTime` ) ;
 
-ALTER TABLE `Production.ManufacturerModel`
-ADD CONSTRAINT `CK_Production_ManufacturerModel_SysEndTime`
+ALTER TABLE `Sales.Customer`
+ADD CONSTRAINT `CK_Sales_Customer_SysEndTime`
 CHECK ( `SysEndTime` >= `SysStartTime` ) ;
 
-ALTER TABLE `Production.ManufacturerModel`
-ADD CONSTRAINT `CK_Production_ManufacturerModel_FireAuditTrigger`
+ALTER TABLE `Sales.Customer`
+ADD CONSTRAINT `CK_Sales_Customer_FireAuditTrigger`
+CHECK ( `FireAuditTrigger`='Y' OR `FireAuditTrigger`='N' ) ;
+
+CREATE TABLE IF NOT EXISTS `HumanResources.Staff`
+(
+	`StaffId` INTEGER AUTO_INCREMENT  COMMENT 'A unique identifier for staff members' NOT NULL ,
+	`ManagerId` INTEGER COMMENT 'The ID of a staff member that supervises an employee' NULL ,
+	`StaffName` VARCHAR(60) COMMENT 'The full name of a staff member' NOT NULL ,
+	`Department` VARCHAR(15) COMMENT 'The department name a staff member works in' NULL ,
+	`UserAuthorizationId` INTEGER  DEFAULT 1 COMMENT 'A unique identifier for UserAuthorizationIds' NOT NULL ,
+	`SysStartTime` DATETIME  DEFAULT CURRENT_TIMESTAMP COMMENT 'The start time for a system transaction' NULL ,
+	`SysEndTime` DATETIME  DEFAULT CURRENT_TIMESTAMP COMMENT 'The end time for a system transaction' NULL ,
+	`RowLevelHashKey` BLOB COMMENT 'Current row hash key representing all combined columns' NULL ,
+	`TransactionNumber` INTEGER  DEFAULT 1 COMMENT 'The transaction number in a series of database transactions' NOT NULL ,
+	`Note` VARCHAR(100)  DEFAULT 'Row was inserted' COMMENT 'A note regarding the database transaction' NULL ,
+	`PriorRowLevelHashKey` BLOB COMMENT 'The prior transaction row level hash key' NULL ,
+	`FireAuditTrigger` CHAR(1)  DEFAULT 'N' COMMENT 'A flag to indicate if an audit trigger should be fired' NOT NULL ,
+	 CONSTRAINT XPKStaff PRIMARY KEY  ( `StaffId` ASC ),
+	CONSTRAINT `FK_HumanResources.Staff_HumanResources.Staff` FOREIGN KEY (`ManagerId`) REFERENCES `HumanResources.Staff` (`StaffId`)
+		ON DELETE NO ACTION 
+		ON UPDATE NO ACTION ,
+	CONSTRAINT `FK_HumanResources.Staff_DbSecurity.UserAuthorization` FOREIGN KEY (`UserAuthorizationId`) REFERENCES `DbSecurity.UserAuthorization` (`UserAuthorizationId`)
+		ON DELETE NO ACTION 
+		ON UPDATE NO ACTION 
+)
+COMMENT = 'A staff member of the business who sells vehicles to customers';
+
+
+ALTER TABLE `HumanResources.Staff`
+ADD CONSTRAINT `CK_HumanResources_Staff_SysStartTime`
+CHECK ( `SysEndTime` >= `SysStartTime` ) ;
+
+ALTER TABLE `HumanResources.Staff`
+ADD CONSTRAINT `CK_HumanResources_Staff_FireAuditTrigger`
+CHECK ( `FireAuditTrigger`='Y' OR `FireAuditTrigger`='N' ) ;
+
+CREATE TABLE IF NOT EXISTS `Sales.SalesOrderVehicle`
+(
+	`SalesOrderVehicleId` INTEGER AUTO_INCREMENT  COMMENT 'A unique identifier for a purchase' NOT NULL ,
+	`CustomerId` INTEGER COMMENT 'A unique identifier for customers' NOT NULL ,
+	`StaffId` INTEGER COMMENT 'A unique identifier for staff members' NOT NULL ,
+	`InvoiceNumber` VARCHAR(8) COMMENT 'The invoice number of an order' NOT NULL ,
+	`TotalSalePrice` DECIMAL(18,2)  DEFAULT 0 COMMENT 'The total sale price of an order' NOT NULL ,
+	`SaleDate` DATETIME  DEFAULT CURRENT_TIMESTAMP COMMENT 'The date an order was made' NOT NULL ,
+	`UserAuthorizationId` INTEGER  DEFAULT 1 COMMENT 'A unique identifier for UserAuthorizationIds' NOT NULL ,
+	`SysStartTime` DATETIME  DEFAULT CURRENT_TIMESTAMP COMMENT 'The start time for a system transaction' NULL ,
+	`SysEndTime` DATETIME  DEFAULT CURRENT_TIMESTAMP COMMENT 'The end time for a system transaction' NULL ,
+	`RowLevelHashKey` BLOB COMMENT 'Current row hash key representing all combined columns' NULL ,
+	`TransactionNumber` INTEGER  DEFAULT 1 COMMENT 'The transaction number in a series of database transactions' NOT NULL ,
+	`Note` VARCHAR(100)  DEFAULT 'Row was inserted' COMMENT 'A note regarding the database transaction' NULL ,
+	`PriorRowLevelHashKey` BLOB COMMENT 'The prior transaction row level hash key' NULL ,
+	`FireAuditTrigger` CHAR(1)  DEFAULT 'N' COMMENT 'A flag to indicate if an audit trigger should be fired' NOT NULL ,
+	`CategoryDescription` VARCHAR(20) GENERATED ALWAYS  AS ( CASE WHEN `TotalSalePrice` >= 100001.00 THEN 'Very High' WHEN `TotalSalePrice` BETWEEN 75001.00 AND 100000.00 THEN 'High' WHEN `TotalSalePrice` BETWEEN 50001.00 AND 75000.00 THEN 'Medium'  WHEN `TotalSalePrice` BETWEEN 25001.00 AND 50000.00 THEN 'Low' WHEN `TotalSalePrice` BETWEEN 150001.00 AND 250000.00 THEN 'Exceptional' WHEN `TotalSalePrice` BETWEEN 100001.00 AND 150000.00 THEN 'Very High' WHEN `TotalSalePrice` BETWEEN 100.00 AND 25000.00 THEN 'Very Low' ELSE 'Unknown' END )  COMMENT 'The category description a vehicle sales threshold' NOT NULL ,
+	 CONSTRAINT XPKSales_Order_Vehicle PRIMARY KEY  ( `SalesOrderVehicleId` ASC ),
+	CONSTRAINT `FK_Sales.SalesOrderVehicle_Sales.Customer` FOREIGN KEY (`CustomerId`) REFERENCES `Sales.Customer` (`CustomerId`)
+		ON DELETE NO ACTION 
+		ON UPDATE NO ACTION ,
+	CONSTRAINT `FK_Sales.SalesOrderVehicle_HumanResources.Staff` FOREIGN KEY (`StaffId`) REFERENCES `HumanResources.Staff` (`StaffId`)
+		ON DELETE NO ACTION 
+		ON UPDATE NO ACTION ,
+	CONSTRAINT `FK_Sales.SalesOrderVehicle_DbSecurity.UserAuthorization` FOREIGN KEY (`UserAuthorizationId`) REFERENCES `DbSecurity.UserAuthorization` (`UserAuthorizationId`)
+		ON DELETE NO ACTION 
+		ON UPDATE NO ACTION 
+)
+COMMENT = 'An order for the purchase of a vehicle';
+
+
+ALTER TABLE `Sales.SalesOrderVehicle`
+ADD CONSTRAINT `CK_Sales_SalesOrderVehicle_TotalSalePrice`
+CHECK ( `TotalSalePrice` >= 0 ) ;
+
+ALTER TABLE `Sales.SalesOrderVehicle`
+ADD CONSTRAINT `CK_Sales_SalesOrderVehicle_SysStartTime`
+CHECK ( `SysEndTime` >= `SysStartTime` ) ;
+
+ALTER TABLE `Sales.SalesOrderVehicle`
+ADD CONSTRAINT `CK_Sales_SalesOrderVehicle_SysEndTime`
+CHECK ( `SysEndTime` >= `SysStartTime` ) ;
+
+ALTER TABLE `Sales.SalesOrderVehicle`
+ADD CONSTRAINT `CK_Sales_SalesOrderVehicle_FireAuditTrigger`
 CHECK ( `FireAuditTrigger`='Y' OR `FireAuditTrigger`='N' ) ;
 
 CREATE TABLE IF NOT EXISTS `Production.ManufacturerVehicleMake`
@@ -376,7 +452,13 @@ CREATE TABLE IF NOT EXISTS `Production.ManufacturerVehicleMake`
 	`PriorRowLevelHashKey` BLOB COMMENT 'The prior transaction row level hash key' NULL ,
 	`FireAuditTrigger` CHAR(1)  DEFAULT 'N' COMMENT 'A flag to indicate if an audit trigger should be fired' NOT NULL ,
 	`MarketingType` VARCHAR(25) COMMENT 'The marketing type of a vehicle make' NULL ,
-	 CONSTRAINT PK_Make PRIMARY KEY  ( `ManufacturerVehicleMakeId` ASC )
+	 CONSTRAINT PK_Make PRIMARY KEY  ( `ManufacturerVehicleMakeId` ASC ),
+	CONSTRAINT `FK_Production.ManufacturerVehicleMake_Locale.Country` FOREIGN KEY (`CountryId`) REFERENCES `Locale.Country` (`CountryId`)
+		ON DELETE NO ACTION 
+		ON UPDATE NO ACTION ,
+	CONSTRAINT `FK_Production.ManufacturerVehicleMake_DbSecurity.UserAuthorizati` FOREIGN KEY (`UserAuthorizationId`) REFERENCES `DbSecurity.UserAuthorization` (`UserAuthorizationId`)
+		ON DELETE NO ACTION 
+		ON UPDATE NO ACTION 
 )
 COMMENT = 'The company responsible for the production of a vehicle';
 
@@ -391,6 +473,43 @@ CHECK ( `SysEndTime` >= `SysStartTime` ) ;
 
 ALTER TABLE `Production.ManufacturerVehicleMake`
 ADD CONSTRAINT `CK_Production_ManufacturerVehicleMakel_FireAuditTrigger`
+CHECK ( `FireAuditTrigger`='Y' OR `FireAuditTrigger`='N' ) ;
+
+CREATE TABLE IF NOT EXISTS `Production.ManufacturerModel`
+(
+	`ManufacturerModelId` INTEGER AUTO_INCREMENT  COMMENT 'A unique identifier for vehicle models' NOT NULL ,
+	`ManufacturerModelName` VARCHAR(35) COMMENT 'The name of a vehicle model' NOT NULL ,
+	`ManufacturerModelVariant` VARCHAR(35) COMMENT 'The name of a vehicle model variant if applicable' NULL ,
+	`ManufacturerVehicleMakeId` INTEGER COMMENT 'A unique identifier for vehicle makes' NOT NULL ,
+	`UserAuthorizationId` INTEGER  DEFAULT 1 COMMENT 'A unique identifier for UserAuthorizationIds' NOT NULL ,
+	`SysStartTime` DATETIME  DEFAULT CURRENT_TIMESTAMP COMMENT 'The start time for a system transaction' NULL ,
+	`SysEndTime` DATETIME  DEFAULT CURRENT_TIMESTAMP COMMENT 'The end time for a system transaction' NULL ,
+	`RowLevelHashKey` BLOB COMMENT 'Current row hash key representing all combined columns' NULL ,
+	`TransactionNumber` INTEGER  DEFAULT 1 COMMENT 'The transaction number in a series of database transactions' NOT NULL ,
+	`Note` VARCHAR(100)  DEFAULT 'Row was inserted' COMMENT 'A note regarding the database transaction' NULL ,
+	`PriorRowLevelHashKey` BLOB COMMENT 'The prior transaction row level hash key' NULL ,
+	`FireAuditTrigger` CHAR(1)  DEFAULT 'N' COMMENT 'A flag to indicate if an audit trigger should be fired' NOT NULL ,
+	 CONSTRAINT PK_Model_1 PRIMARY KEY  ( `ManufacturerModelId` ASC ),
+	CONSTRAINT `FK_Production.ManufacturerModel_Production.ManufacturerVehicleMa` FOREIGN KEY (`ManufacturerVehicleMakeId`) REFERENCES `Production.ManufacturerVehicleMake` (`ManufacturerVehicleMakeId`)
+		ON DELETE NO ACTION 
+		ON UPDATE NO ACTION ,
+	CONSTRAINT `FK_Production.ManufacturerModel_DbSecurity.UserAuthorization` FOREIGN KEY (`UserAuthorizationId`) REFERENCES `DbSecurity.UserAuthorization` (`UserAuthorizationId`)
+		ON DELETE NO ACTION 
+		ON UPDATE NO ACTION 
+)
+COMMENT = 'The model of a particular vehicle created by the manufacturer';
+
+
+ALTER TABLE `Production.ManufacturerModel`
+ADD CONSTRAINT `CK_Production_ManufacturerModel_SysStartTime`
+CHECK ( `SysEndTime` >= `SysStartTime` ) ;
+
+ALTER TABLE `Production.ManufacturerModel`
+ADD CONSTRAINT `CK_Production_ManufacturerModel_SysEndTime`
+CHECK ( `SysEndTime` >= `SysStartTime` ) ;
+
+ALTER TABLE `Production.ManufacturerModel`
+ADD CONSTRAINT `CK_Production_ManufacturerModel_FireAuditTrigger`
 CHECK ( `FireAuditTrigger`='Y' OR `FireAuditTrigger`='N' ) ;
 
 CREATE TABLE IF NOT EXISTS `Production.ManufacturerVehicleStock`
@@ -414,7 +533,13 @@ CREATE TABLE IF NOT EXISTS `Production.ManufacturerVehicleStock`
 	`Note` VARCHAR(100)  DEFAULT 'Row was inserted' COMMENT 'A note regarding the database transaction' NULL ,
 	`PriorRowLevelHashKey` BLOB COMMENT 'The prior transaction row level hash key' NULL ,
 	`FireAuditTrigger` CHAR(1)  DEFAULT 'N' COMMENT 'A flag to indicate if an audit trigger should be fired' NOT NULL ,
-	 CONSTRAINT PK_Stock PRIMARY KEY  ( `ManufacturerVehicleStockId` ASC )
+	 CONSTRAINT PK_Stock PRIMARY KEY  ( `ManufacturerVehicleStockId` ASC ),
+	CONSTRAINT `FK_Production.ManufacturerVehicleStock_Production.ManufacturerMo` FOREIGN KEY (`ModelId`) REFERENCES `Production.ManufacturerModel` (`ManufacturerModelId`)
+		ON DELETE NO ACTION 
+		ON UPDATE NO ACTION ,
+	CONSTRAINT `FK_Production.ManufacturerVehicleStock_DbSecurity.UserAuthorizat` FOREIGN KEY (`UserAuthorizationId`) REFERENCES `DbSecurity.UserAuthorization` (`UserAuthorizationId`)
+		ON DELETE NO ACTION 
+		ON UPDATE NO ACTION 
 )
 COMMENT = 'A produced physical vehicle that a manufacturer has in stock';
 
@@ -451,89 +576,6 @@ ALTER TABLE `Production.ManufacturerVehicleStock`
 ADD CONSTRAINT `CK_Production_ManfuacturerVehicleStock_FireAuditTrigger`
 CHECK ( `FireAuditTrigger`='Y' OR `FireAuditTrigger`='N' ) ;
 
-CREATE TABLE IF NOT EXISTS `Sales.Customer`
-(
-	`CustomerId` INTEGER AUTO_INCREMENT  COMMENT 'A unique identifier for customers' NOT NULL ,
-	`CustomerName` VARCHAR(65) COMMENT 'The full name of a customer' NOT NULL ,
-	`CustomerAddress1` VARCHAR(60) COMMENT 'The street address of a customer' NOT NULL ,
-	`CustomerAddress2` VARCHAR(60) COMMENT 'The extended street address of a customer' NULL ,
-	`CustomerTown` VARCHAR(30) COMMENT 'The town or city a customer resides in' NOT NULL ,
-	`CustomerPostalCode` VARCHAR(9) COMMENT 'The postal code of a customer if applicable' NULL ,
-	`CountryId` INTEGER COMMENT 'A unique identifier for countries' NOT NULL ,
-	`IsCustomerReseller` INTEGER COMMENT 'Flag to determine if a customer is a reseller' NOT NULL ,
-	`IsCustomerCreditRisk` INTEGER COMMENT 'Flag to determine if customer is a credit risk' NOT NULL ,
-	`SpendCapacity` VARCHAR(15) COMMENT 'The spend capacity of a customer' NULL ,
-	`UserAuthorizationId` INTEGER  DEFAULT 1 COMMENT 'A unique identifier for UserAuthorizationIds' NOT NULL ,
-	`SysStartTime` DATETIME  DEFAULT CURRENT_TIMESTAMP COMMENT 'The start time for a system transaction' NULL ,
-	`SysEndTime` DATETIME  DEFAULT CURRENT_TIMESTAMP COMMENT 'The end time for a system transaction' NULL ,
-	`RowLevelHashKey` BLOB COMMENT 'Current row hash key representing all combined columns' NULL ,
-	`TransactionNumber` INTEGER  DEFAULT 1 COMMENT 'The transaction number in a series of database transactions' NOT NULL ,
-	`Note` VARCHAR(100)  DEFAULT 'Row was inserted' COMMENT 'A note regarding the database transaction' NULL ,
-	`PriorRowLevelHashKey` BLOB COMMENT 'The prior transaction row level hash key' NULL ,
-	`FireAuditTrigger` CHAR(1)  DEFAULT 'N' COMMENT 'A flag to indicate if an audit trigger should be fired' NOT NULL ,
-	 CONSTRAINT PK_Customer PRIMARY KEY  ( `CustomerId` ASC )
-)
-COMMENT = 'A person who purchases a vehicle from the business';
-
-
-ALTER TABLE `Sales.Customer`
-ADD CONSTRAINT `CK_Sales_Customer_IsCustomerReseller`
-CHECK ( `IsCustomerReseller` = 0 OR `IsCustomerReseller` = 1 ) ;
-
-ALTER TABLE `Sales.Customer`
-ADD CONSTRAINT `BCK_TemplateTable_ValidBit_1125086184`
-CHECK ( `IsCustomerCreditRisk` = 0 OR `IsCustomerCreditRisk` = 1 ) ;
-
-ALTER TABLE `Sales.Customer`
-ADD CONSTRAINT `CK_Sales_Customer_SysStartTime`
-CHECK ( `SysEndTime` >= `SysStartTime` ) ;
-
-ALTER TABLE `Sales.Customer`
-ADD CONSTRAINT `CK_Sales_Customer_SysEndTime`
-CHECK ( `SysEndTime` >= `SysStartTime` ) ;
-
-ALTER TABLE `Sales.Customer`
-ADD CONSTRAINT `CK_Sales_Customer_FireAuditTrigger`
-CHECK ( `FireAuditTrigger`='Y' OR `FireAuditTrigger`='N' ) ;
-
-CREATE TABLE IF NOT EXISTS `Sales.SalesOrderVehicle`
-(
-	`SalesOrderVehicleId` INTEGER AUTO_INCREMENT  COMMENT 'A unique identifier for a purchase' NOT NULL ,
-	`CustomerId` INTEGER COMMENT 'A unique identifier for customers' NOT NULL ,
-	`StaffId` INTEGER COMMENT 'A unique identifier for staff members' NOT NULL ,
-	`InvoiceNumber` VARCHAR(8) COMMENT 'The invoice number of an order' NOT NULL ,
-	`TotalSalePrice` DECIMAL(18,2)  DEFAULT 0 COMMENT 'The total sale price of an order' NOT NULL ,
-	`SaleDate` DATETIME  DEFAULT CURRENT_TIMESTAMP COMMENT 'The date an order was made' NOT NULL ,
-	`UserAuthorizationId` INTEGER  DEFAULT 1 COMMENT 'A unique identifier for UserAuthorizationIds' NOT NULL ,
-	`SysStartTime` DATETIME  DEFAULT CURRENT_TIMESTAMP COMMENT 'The start time for a system transaction' NULL ,
-	`SysEndTime` DATETIME  DEFAULT CURRENT_TIMESTAMP COMMENT 'The end time for a system transaction' NULL ,
-	`RowLevelHashKey` BLOB COMMENT 'Current row hash key representing all combined columns' NULL ,
-	`TransactionNumber` INTEGER  DEFAULT 1 COMMENT 'The transaction number in a series of database transactions' NOT NULL ,
-	`Note` VARCHAR(100)  DEFAULT 'Row was inserted' COMMENT 'A note regarding the database transaction' NULL ,
-	`PriorRowLevelHashKey` BLOB COMMENT 'The prior transaction row level hash key' NULL ,
-	`FireAuditTrigger` CHAR(1)  DEFAULT 'N' COMMENT 'A flag to indicate if an audit trigger should be fired' NOT NULL ,
-	`CategoryDescription` VARCHAR(20) GENERATED ALWAYS  AS ( CASE WHEN `TotalSalePrice` >= 100001.00 THEN 'Very High' WHEN `TotalSalePrice` BETWEEN 75001.00 AND 100000.00 THEN 'High' WHEN `TotalSalePrice` BETWEEN 50001.00 AND 75000.00 THEN 'Medium'  WHEN `TotalSalePrice` BETWEEN 25001.00 AND 50000.00 THEN 'Low' WHEN `TotalSalePrice` BETWEEN 150001.00 AND 250000.00 THEN 'Exceptional' WHEN `TotalSalePrice` BETWEEN 100001.00 AND 150000.00 THEN 'Very High' WHEN `TotalSalePrice` BETWEEN 100.00 AND 25000.00 THEN 'Very Low' ELSE 'Unknown' END )  COMMENT 'The category description a vehicle sales threshold' NOT NULL ,
-	 CONSTRAINT XPKSales_Order_Vehicle PRIMARY KEY  ( `SalesOrderVehicleId` ASC )
-)
-COMMENT = 'An order for the purchase of a vehicle';
-
-
-ALTER TABLE `Sales.SalesOrderVehicle`
-ADD CONSTRAINT `CK_Sales_SalesOrderVehicle_TotalSalePrice`
-CHECK ( `TotalSalePrice` >= 0 ) ;
-
-ALTER TABLE `Sales.SalesOrderVehicle`
-ADD CONSTRAINT `CK_Sales_SalesOrderVehicle_SysStartTime`
-CHECK ( `SysEndTime` >= `SysStartTime` ) ;
-
-ALTER TABLE `Sales.SalesOrderVehicle`
-ADD CONSTRAINT `CK_Sales_SalesOrderVehicle_SysEndTime`
-CHECK ( `SysEndTime` >= `SysStartTime` ) ;
-
-ALTER TABLE `Sales.SalesOrderVehicle`
-ADD CONSTRAINT `CK_Sales_SalesOrderVehicle_FireAuditTrigger`
-CHECK ( `FireAuditTrigger`='Y' OR `FireAuditTrigger`='N' ) ;
-
 CREATE TABLE IF NOT EXISTS `Sales.SalesOrderVehicleDetail`
 (
 	`SalesOrderVehicleDetailId` INTEGER AUTO_INCREMENT  COMMENT 'A unique identifier for Sales.SalesOrderVehicleDetail Ids' NOT NULL ,
@@ -551,7 +593,16 @@ CREATE TABLE IF NOT EXISTS `Sales.SalesOrderVehicleDetail`
 	`Note` VARCHAR(100)  DEFAULT 'Row was inserted' COMMENT 'A note regarding the database transaction' NULL ,
 	`PriorRowLevelHashKey` BLOB COMMENT 'The prior transaction row level hash key' NULL ,
 	`FireAuditTrigger` CHAR(1)  DEFAULT 'N' COMMENT 'A flag to indicate if an audit trigger should be fired' NOT NULL ,
-	 CONSTRAINT PK_SalesDetails PRIMARY KEY  ( `SalesOrderVehicleDetailId` ASC )
+	 CONSTRAINT PK_SalesDetails PRIMARY KEY  ( `SalesOrderVehicleDetailId` ASC ),
+	CONSTRAINT `FK_Sales.SalesOrderVehicleDetail_Sales.SalesOrderVehicle` FOREIGN KEY (`SalesOrderVehicleId`) REFERENCES `Sales.SalesOrderVehicle` (`SalesOrderVehicleId`)
+		ON DELETE NO ACTION 
+		ON UPDATE NO ACTION ,
+	CONSTRAINT `FK_Sales.SalesOrderVehicleDetail_Production.ManufacturerVehicleS` FOREIGN KEY (`ManufacturerVehicleStockId`) REFERENCES `Production.ManufacturerVehicleStock` (`ManufacturerVehicleStockId`)
+		ON DELETE NO ACTION 
+		ON UPDATE NO ACTION ,
+	CONSTRAINT `FK_Sales.SalesOrderVehicleDetail_DbSecurity.UserAuthorization` FOREIGN KEY (`UserAuthorizationId`) REFERENCES `DbSecurity.UserAuthorization` (`UserAuthorizationId`)
+		ON DELETE NO ACTION 
+		ON UPDATE NO ACTION 
 )
 COMMENT = 'The details of a vehicle order';
 
@@ -587,6 +638,215 @@ CREATE TABLE IF NOT EXISTS `Utils.CommonColumnsForTriggerTemplate`
 	`SysEndTime` DATETIME COMMENT 'The end time for a system transaction' NOT NULL 
 )
 COMMENT = 'Common columns for Trigger Audit Tables';
+
+CREATE VIEW `CustomViews.uvw_ChuanModelMake` as 
+select PMM.ManufacturerModelName as Model, PMVM.ManufacturerVehicleMakeName as Make from `Production.ManufacturerModel` as PMM
+INNER JOIN `Production.ManufacturerVehicleMake` as PMVM on  PMM.ManufacturerVehicleMakeId = PMVM.ManufacturerVehicleMakeId;;;
+
+CREATE VIEW `CustomViews.uvw_ChuanMakeCountry` as
+select LC.CountryName as Country, PMVM.ManufacturerVehicleMakeName as Make from `Production.ManufacturerVehicleMake` as PMVM
+INNER JOIN `Locale.Country` as LC on PMVM.CountryId = LC.CountryId;;;
+
+CREATE VIEW `CustomViews.uvw_ChuanCustomerCountry` as
+select SC.CustomerName,LC.CountryName from `Sales.Customer` as SC INNER JOIN `Locale.Country` as LC on LC.CountryId = SC.CountryId;;;
+
+CREATE VIEW `CustomViews.uvw_MehrshadYearlyCustomerSales`
+as
+SELECT
+        `Sales.SalesOrderVehicle`.`SaleDate`                              ,
+        `Sales.Customer`.`CustomerName`                                   ,
+        `Production.ManufacturerVehicleMake`.`ManufacturerVehicleMakeName`,
+        `Production.ManufacturerModel`.`ManufacturerModelName`            ,
+        `Sales.SalesOrderVehicleDetail`.`SalePrice`
+FROM
+        `Sales.SalesOrderVehicleDetail`
+INNER JOIN
+        `Sales.SalesOrderVehicle`
+ON
+        `Sales.SalesOrderVehicleDetail`.`SalesOrderVehicleId` = `Sales.SalesOrderVehicle`.`SalesOrderVehicleId`
+INNER JOIN
+        `Sales.Customer`
+ON
+        `Sales.SalesOrderVehicle`.`CustomerId` = `Sales.Customer`.`CustomerId`
+CROSS JOIN
+        `Production.ManufacturerModel`
+INNER JOIN
+        `Production.ManufacturerVehicleMake`
+ON
+        `Production.ManufacturerModel`.`ManufacturerVehicleMakeId` = `Production.ManufacturerVehicleMake`.`ManufacturerVehicleMakeId`;;;
+
+CREATE VIEW `CustomViews.uvw_MehrshadYearlySalesProfits`
+as
+SELECT
+    YEAR(`Sales.SalesOrderVehicle`.`SaleDate`) AS `SalesYear`,
+    `Production.ManufacturerVehicleMake`.`ManufacturerVehicleMakeName` AS `MakeName`,
+    `Production.ManufacturerModel`.`ManufacturerModelName` AS `ModelName`,
+    `Sales.Customer`.`CustomerName`,
+    `Production.ManufacturerVehicleStock`.`Cost`,
+    `Production.ManufacturerVehicleStock`.`RepairsCharge`,
+    `Production.ManufacturerVehicleStock`.`PartsCharge` AS `PartsCost`,
+    `Production.ManufacturerVehicleStock`.`DeliveryCharge` AS `TransportInCost`,
+    `Sales.SalesOrderVehicleDetail`.`SalePrice`,
+    `Sales.SalesOrderVehicle`.`SaleDate`,
+    (`Sales.SalesOrderVehicleDetail`.`SalePrice` - `Production.ManufacturerVehicleStock`.`Cost` - `Production.ManufacturerVehicleStock`.`RepairsCharge` - 
+	`Production.ManufacturerVehicleStock`.`PartsCharge` - `Production.ManufacturerVehicleStock`.`DeliveryCharge`) AS `Profit`
+FROM
+    `Sales.Customer`
+INNER JOIN
+    `Sales.SalesOrderVehicle`
+ON
+    `Sales.Customer`.`CustomerId` = `Sales.SalesOrderVehicle`.`CustomerId`
+INNER JOIN
+    `Sales.SalesOrderVehicleDetail`
+ON
+    `Sales.SalesOrderVehicle`.`SalesOrderVehicleId` = `Sales.SalesOrderVehicleDetail`.`SalesOrderVehicleId`
+INNER JOIN
+    `Production.ManufacturerVehicleStock`
+ON
+    `Sales.SalesOrderVehicleDetail`.`ManufacturerVehicleStockId` = `Production.ManufacturerVehicleStock`.`ManufacturerVehicleStockId`
+INNER JOIN
+    `Production.ManufacturerModel`
+ON
+    `Production.ManufacturerModel`.`ManufacturerModelId` = `Production.ManufacturerVehicleStock`.`ModelId`
+INNER JOIN
+    `Production.ManufacturerVehicleMake`
+ON
+    `Production.ManufacturerModel`.`ManufacturerVehicleMakeId` = `Production.ManufacturerVehicleMake`.`ManufacturerVehicleMakeId`;
+;;
+
+CREATE VIEW `CustomViews.uvw_MehrshadVehicleCost`
+as
+SELECT
+        `Production.ManufacturerVehicleMake`.`ManufacturerVehicleMakeName`,
+        `Production.ManufacturerModel`.`ManufacturerModelName`            ,
+        `Production.ManufacturerVehicleStock`.`Cost`
+FROM
+        `Sales.SalesOrderVehicleDetail`
+INNER JOIN
+        `Sales.SalesOrderVehicle`
+ON
+        `Sales.SalesOrderVehicleDetail`.`SalesOrderVehicleId` = `Sales.SalesOrderVehicle`.`SalesOrderVehicleId`
+INNER JOIN
+        `Sales.Customer`
+ON
+        `Sales.SalesOrderVehicle`.`CustomerId` = `Sales.Customer`.`CustomerId`
+INNER JOIN
+        `Production.ManufacturerVehicleStock`
+ON
+        `Sales.SalesOrderVehicleDetail`.`ManufacturerVehicleStockId` = `Production.ManufacturerVehicleStock`.`ManufacturerVehicleStockId`
+INNER JOIN
+        `Production.ManufacturerModel`
+INNER JOIN
+        `Production.ManufacturerVehicleMake`
+ON
+        `Production.ManufacturerModel`.`ManufacturerVehicleMakeId` = `Production.ManufacturerVehicleMake`.`ManufacturerVehicleMakeId`
+ON
+        `Production.ManufacturerVehicleStock`.`ModelId` = `Production.ManufacturerModel`.`ManufacturerModelId`;;
+
+CREATE VIEW `CustomViews.uvw_RalphEmployeeManager`
+as
+SELECT 
+	`emp`.`StaffName` as `Employee Name`,
+	`emp`.`Department` as `Employee Department`,
+	`mgr`.`StaffName` as `Manager Name`,
+	`mgr`.`Department` as `Manager Department`
+FROM
+`HumanResources.Staff` AS `emp`
+INNER JOIN
+`HumanResources.Staff` AS `mgr`
+ON `emp`.`ManagerId` = `mgr`.`StaffId`;;
+;
+
+CREATE VIEW `CustomViews.uvw_RalphMakeModelPartsCost` AS
+SELECT 
+	`mvm`.`ManufacturerVehicleMakeName` AS `Make`,
+	`mm`.`ManufacturerModelName` AS `Model`,
+	`mvs`.`PartsCharge` AS `Parts Cost`
+FROM 
+`Production.ManufacturerVehicleStock` as `mvs`
+INNER JOIN
+`Production.ManufacturerModel` as `mm`
+ON `mm`.`ManufacturerModelId` = `mvs`.`ModelId`
+INNER JOIN `Production.ManufacturerVehicleMake` as `mvm`
+ON `mm`.`ManufacturerVehicleMakeId` = `mvm`.`ManufacturerVehicleMakeId`;;
+;
+
+CREATE VIEW `CustomViews.uvw_RyanCustomerCountryDate` as
+SELECT 
+    C.CustomerName,
+    CO.CountryName,
+	MIN(CO.SysStartTime) as StartTime,
+	MAX(CO.SysEndTime) as EndTime
+FROM 
+    `Sales.Customer` C
+INNER JOIN 
+    `Locale.Country` CO ON C.CountryId = CO.CountryId
+GROUP BY 
+    C.CustomerName, CO.CountryName;;
+
+CREATE VIEW `CustomViews.uvw_RyanCustomerLatestTotalSaleDate` as
+SELECT
+	C.CustomerName,
+	SUM(SOV.TotalSalePrice) as TotalSalePrice,
+	MAX(SOV.SaleDate) as LatestSaleDate
+FROM
+	`Sales.Customer` C
+INNER JOIN
+	`Sales.SalesOrderVehicle` SOV ON C.CustomerId = SOV.CustomerId
+GROUP BY
+	C.CustomerName;;
+
+CREATE VIEW `CustomViews.uvw_RyanGroupSpendCapacity` as
+SELECT
+    G.GroupName,
+    SUM(CAST(C.SpendCapacity AS float)) as TotalSpendCapacity
+FROM
+    `DbSecurity.UserAuthorization` G
+INNER JOIN
+    `Sales.Customer` C ON C.UserAuthorizationId = G.UserAuthorizationId
+GROUP BY
+    G.GroupName;;
+
+CREATE VIEW `CustomViews.uvw_JimmyModelCountry` AS 
+SELECT 
+	`Production.ManufacturerModel`.`ManufacturerModelName` AS `ModelName`,
+	`Locale.Country`.`CountryName` AS `CountryName`
+FROM 
+`Locale.Country` 
+INNER JOIN
+`Production.ManufacturerModel` 
+ON `Locale.Country`.`TransactionNumber` = `Production.ManufacturerModel`.`TransactionNumber`
+;;
+
+CREATE VIEW `CustomViews.uvw_JimmyCustomerVehicleVehicleDetail` AS
+SELECT 
+	`Sales.Customer`.`CustomerName` AS `CustName`,
+	`Sales.SalesOrderVehicle`.`TotalSalePrice` AS `TotalSale`, 
+	`Sales.SalesOrderVehicleDetail`.`SalePrice` AS `SalePrice`
+FROM 
+`Sales.Customer`
+INNER JOIN
+`Sales.SalesOrderVehicle` 
+ON `Sales.Customer`.`CustomerId` = `Sales.SalesOrderVehicle`.`CustomerId`
+INNER JOIN 
+`Sales.SalesOrderVehicleDetail` 
+ON `Sales.SalesOrderVehicle`.`SalesOrderVehicleId` = `Sales.SalesOrderVehicleDetail`.`SalesOrderVehicleId`
+;;
+
+CREATE VIEW `CustomViews.uvw_JimmyCustomerMakeModel` AS
+SELECT 
+	`Sales.Customer`.`CustomerName` AS `CustName`,
+	`Production.ManufacturerVehicleMake`.`ManufacturerVehicleMakeName` AS `MakeName`, 
+	`Production.ManufacturerModel`.`ManufacturerModelName` AS `Model`
+FROM 
+`Production.ManufacturerVehicleMake`
+INNER JOIN
+`Sales.Customer`
+ON `Production.ManufacturerVehicleMake`.`TransactionNumber` = `Sales.Customer`.`TransactionNumber`
+INNER JOIN 
+`Production.ManufacturerModel`
+ON `Sales.Customer`.`TransactionNumber` = `Production.ManufacturerModel`.`TransactionNumber`
+;;
 
 CREATE VIEW `Sales_uvw_Sales2018` AS
 SELECT
@@ -753,135 +1013,3 @@ CREATE VIEW `CustomViews.uvw_ChuanStaffDiscountGiven` as
 select HRS.StaffName, SUM(SSOVD.LineItemDiscount) as DiscountGiven from `HumanResources.Staff` as HRS
 INNER JOIN `Sales.SalesOrderVehicle` as SSOV on HRS.StaffId = SSOV.StaffId 
 INNER JOIN `Sales.SalesOrderVehicleDetail` as SSOVD on SSOV.SalesOrderVehicleId = SSOVD.SalesOrderVehicleId group by StaffName;;;;
-
-CREATE VIEW `CustomViews.uvw_ChuanModelMake` as 
-select PMM.ManufacturerModelName as Model, PMVM.ManufacturerVehicleMakeName as Make from `Production.ManufacturerModel` as PMM
-INNER JOIN `Production.ManufacturerVehicleMake` as PMVM on  PMM.ManufacturerVehicleMakeId = PMVM.ManufacturerVehicleMakeId;;;
-
-CREATE VIEW `CustomViews.uvw_ChuanMakeCountry` as
-select LC.CountryName as Country, PMVM.ManufacturerVehicleMakeName as Make from `Production.ManufacturerVehicleMake` as PMVM
-INNER JOIN `Locale.Country` as LC on PMVM.CountryId = LC.CountryId;;;
-
-CREATE VIEW `CustomViews.uvw_ChuanCustomerCountry` as
-select SC.CustomerName,LC.CountryName from `Sales.Customer` as SC INNER JOIN `Locale.Country` as LC on LC.CountryId = SC.CountryId;;;
-
-CREATE VIEW `CustomViews.uvw_MehrshadYearlyCustomerSales`
-as
-SELECT
-        `Sales.SalesOrderVehicle`.`SaleDate`                              ,
-        `Sales.Customer`.`CustomerName`                                   ,
-        `Production.ManufacturerVehicleMake`.`ManufacturerVehicleMakeName`,
-        `Production.ManufacturerModel`.`ManufacturerModelName`            ,
-        `Sales.SalesOrderVehicleDetail`.`SalePrice`
-FROM
-        `Sales.SalesOrderVehicleDetail`
-INNER JOIN
-        `Sales.SalesOrderVehicle`
-ON
-        `Sales.SalesOrderVehicleDetail`.`SalesOrderVehicleId` = `Sales.SalesOrderVehicle`.`SalesOrderVehicleId`
-INNER JOIN
-        `Sales.Customer`
-ON
-        `Sales.SalesOrderVehicle`.`CustomerId` = `Sales.Customer`.`CustomerId`
-CROSS JOIN
-        `Production.ManufacturerModel`
-INNER JOIN
-        `Production.ManufacturerVehicleMake`
-ON
-        `Production.ManufacturerModel`.`ManufacturerVehicleMakeId` = `Production.ManufacturerVehicleMake`.`ManufacturerVehicleMakeId`;;;
-
-CREATE VIEW `CustomViews.uvw_MehrshadYearlySalesProfits`
-as
-SELECT
-    YEAR(`Sales.SalesOrderVehicle`.`SaleDate`) AS `SalesYear`,
-    `Production.ManufacturerVehicleMake`.`ManufacturerVehicleMakeName` AS `MakeName`,
-    `Production.ManufacturerModel`.`ManufacturerModelName` AS `ModelName`,
-    `Sales.Customer`.`CustomerName`,
-    `Production.ManufacturerVehicleStock`.`Cost`,
-    `Production.ManufacturerVehicleStock`.`RepairsCharge`,
-    `Production.ManufacturerVehicleStock`.`PartsCharge` AS `PartsCost`,
-    `Production.ManufacturerVehicleStock`.`DeliveryCharge` AS `TransportInCost`,
-    `Sales.SalesOrderVehicleDetail`.`SalePrice`,
-    `Sales.SalesOrderVehicle`.`SaleDate`,
-    (`Sales.SalesOrderVehicleDetail`.`SalePrice` - `Production.ManufacturerVehicleStock`.`Cost` - `Production.ManufacturerVehicleStock`.`RepairsCharge` - 
-	`Production.ManufacturerVehicleStock`.`PartsCharge` - `Production.ManufacturerVehicleStock`.`DeliveryCharge`) AS `Profit`
-FROM
-    `Sales.Customer`
-INNER JOIN
-    `Sales.SalesOrderVehicle`
-ON
-    `Sales.Customer`.`CustomerId` = `Sales.SalesOrderVehicle`.`CustomerId`
-INNER JOIN
-    `Sales.SalesOrderVehicleDetail`
-ON
-    `Sales.SalesOrderVehicle`.`SalesOrderVehicleId` = `Sales.SalesOrderVehicleDetail`.`SalesOrderVehicleId`
-INNER JOIN
-    `Production.ManufacturerVehicleStock`
-ON
-    `Sales.SalesOrderVehicleDetail`.`ManufacturerVehicleStockId` = `Production.ManufacturerVehicleStock`.`ManufacturerVehicleStockId`
-INNER JOIN
-    `Production.ManufacturerModel`
-ON
-    `Production.ManufacturerModel`.`ManufacturerModelId` = `Production.ManufacturerVehicleStock`.`ModelId`
-INNER JOIN
-    `Production.ManufacturerVehicleMake`
-ON
-    `Production.ManufacturerModel`.`ManufacturerVehicleMakeId` = `Production.ManufacturerVehicleMake`.`ManufacturerVehicleMakeId`;
-;;
-
-CREATE VIEW `CustomViews.uvw_MehrshadVehicleCost`
-as
-SELECT
-        `Production.ManufacturerVehicleMake`.`ManufacturerVehicleMakeName`,
-        `Production.ManufacturerModel`.`ManufacturerModelName`            ,
-        `Production.ManufacturerVehicleStock`.`Cost`
-FROM
-        `Sales.SalesOrderVehicleDetail`
-INNER JOIN
-        `Sales.SalesOrderVehicle`
-ON
-        `Sales.SalesOrderVehicleDetail`.`SalesOrderVehicleId` = `Sales.SalesOrderVehicle`.`SalesOrderVehicleId`
-INNER JOIN
-        `Sales.Customer`
-ON
-        `Sales.SalesOrderVehicle`.`CustomerId` = `Sales.Customer`.`CustomerId`
-INNER JOIN
-        `Production.ManufacturerVehicleStock`
-ON
-        `Sales.SalesOrderVehicleDetail`.`ManufacturerVehicleStockId` = `Production.ManufacturerVehicleStock`.`ManufacturerVehicleStockId`
-INNER JOIN
-        `Production.ManufacturerModel`
-INNER JOIN
-        `Production.ManufacturerVehicleMake`
-ON
-        `Production.ManufacturerModel`.`ManufacturerVehicleMakeId` = `Production.ManufacturerVehicleMake`.`ManufacturerVehicleMakeId`
-ON
-        `Production.ManufacturerVehicleStock`.`ModelId` = `Production.ManufacturerModel`.`ManufacturerModelId`;;
-
-CREATE VIEW `CustomViews.uvw_RalphEmployeeManager`
-as
-SELECT 
-	`emp`.`StaffName` as `Employee Name`,
-	`emp`.`Department` as `Employee Department`,
-	`mgr`.`StaffName` as `Manager Name`,
-	`mgr`.`Department` as `Manager Department`
-FROM
-`HumanResources.Staff` AS `emp`
-INNER JOIN
-`HumanResources.Staff` AS `mgr`
-ON `emp`.`ManagerId` = `mgr`.`StaffId`;;
-;
-
-CREATE VIEW `CustomViews.uvw_RalphMakeModelPartsCost` AS
-SELECT 
-	`mvm`.`ManufacturerVehicleMakeName` AS `Make`,
-	`mm`.`ManufacturerModelName` AS `Model`,
-	`mvs`.`PartsCharge` AS `Parts Cost`
-FROM 
-`Production.ManufacturerVehicleStock` as `mvs`
-INNER JOIN
-`Production.ManufacturerModel` as `mm`
-ON `mm`.`ManufacturerModelId` = `mvs`.`ModelId`
-INNER JOIN `Production.ManufacturerVehicleMake` as `mvm`
-ON `mm`.`ManufacturerVehicleMakeId` = `mvm`.`ManufacturerVehicleMakeId`;;
-;

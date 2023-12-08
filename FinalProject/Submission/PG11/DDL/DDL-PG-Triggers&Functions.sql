@@ -166,7 +166,7 @@ BEGIN
       coalesce(old."Note", concat('No Message Transaction Number: ', old."TransactionNumber")),
       old."UserAuthorizationId",
       old."SysStartTime",
-      new."SysStartTime",
+      now(),
       old."RowLevelHashKey",
       old."PriorRowLevelHashKey",
       new."FireAuditTrigger",
@@ -177,6 +177,7 @@ BEGIN
     update "Locale"."Country"
     SET
     "TransactionNumber" = old."TransactionNumber" + 1,
+    "SysStartTime" = now(),
 	"RowLevelHashKey" = "Hashing"."CreateSha256KeyFromJsonInputLocaleCountry"(NEW."CountryId"),
 	"PriorRowLevelHashKey" = old."RowLevelHashKey",
 	"Note" = coalesce(new."Note", 'Row updated'),
@@ -363,7 +364,7 @@ BEGIN
       coalesce(old."Note", concat('No Message Transaction Number: ', old."TransactionNumber")),
       old."UserAuthorizationId",
       old."SysStartTime",
-      new."SysStartTime",
+      now(),
       old."RowLevelHashKey",
       old."PriorRowLevelHashKey",
       new."FireAuditTrigger",
@@ -374,6 +375,7 @@ BEGIN
     update "Sales"."Customer"
     SET
     "TransactionNumber" = old."TransactionNumber" + 1,
+    "SysStartTime" = now(),
 	"RowLevelHashKey" = "Hashing"."CreateSha256KeyFromJsonInputLocaleCountry"(NEW."CustomerId"),
 	"PriorRowLevelHashKey" = old."RowLevelHashKey",
 	"Note" = coalesce(new."Note", 'Row updated'),
@@ -560,7 +562,7 @@ BEGIN
       coalesce(old."Note", concat('No Message Transaction Number: ', old."TransactionNumber")),
       old."UserAuthorizationId",
       old."SysStartTime",
-      new."SysStartTime",
+      now(),
       old."RowLevelHashKey",
       old."PriorRowLevelHashKey",
       new."FireAuditTrigger",
@@ -571,6 +573,7 @@ BEGIN
     update "Production"."ManufacturerModel"
     SET
     "TransactionNumber" = old."TransactionNumber" + 1,
+    "SysStartTime" = now(),
 	"RowLevelHashKey" = "Hashing"."CreateSha256KeyFromJsonInputLocaleCountry"(NEW."ManufacturerModelId"),
 	"PriorRowLevelHashKey" = old."RowLevelHashKey",
 	"Note" = coalesce(new."Note", 'Row updated'),
@@ -757,7 +760,7 @@ BEGIN
       coalesce(old."Note", concat('No Message Transaction Number: ', old."TransactionNumber")),
       old."UserAuthorizationId",
       old."SysStartTime",
-      new."SysStartTime",
+      now(),
       old."RowLevelHashKey",
       old."PriorRowLevelHashKey",
       new."FireAuditTrigger",
@@ -768,6 +771,7 @@ BEGIN
     update "Production"."ManufacturerVehicleMake"
     SET
     "TransactionNumber" = old."TransactionNumber" + 1,
+    "SysStartTime" = now(),
 	"RowLevelHashKey" = "Hashing"."CreateSha256KeyFromJsonInputLocaleCountry"(NEW."ManufacturerVehicleMakeId"),
 	"PriorRowLevelHashKey" = old."RowLevelHashKey",
 	"Note" = coalesce(new."Note", 'Row updated'),
@@ -954,7 +958,7 @@ BEGIN
       coalesce(old."Note", concat('No Message Transaction Number: ', old."TransactionNumber")),
       old."UserAuthorizationId",
       old."SysStartTime",
-      new."SysStartTime",
+      now(),
       old."RowLevelHashKey",
       old."PriorRowLevelHashKey",
       new."FireAuditTrigger",
@@ -965,6 +969,7 @@ BEGIN
     update "Production"."ManufacturerVehicleStock"
     SET
     "TransactionNumber" = old."TransactionNumber" + 1,
+    "SysStartTime" = now(),
 	"RowLevelHashKey" = "Hashing"."CreateSha256KeyFromJsonInputLocaleCountry"(NEW."ManufacturerVehicleStockId"),
 	"PriorRowLevelHashKey" = old."RowLevelHashKey",
 	"Note" = coalesce(new."Note", 'Row updated'),
@@ -1151,7 +1156,7 @@ BEGIN
       coalesce(old."Note", concat('No Message Transaction Number: ', old."TransactionNumber")),
       old."UserAuthorizationId",
       old."SysStartTime",
-      new."SysStartTime",
+      now(),
       old."RowLevelHashKey",
       old."PriorRowLevelHashKey",
       new."FireAuditTrigger",
@@ -1162,6 +1167,7 @@ BEGIN
     update "Sales"."SalesOrderVehicle"
     SET
     "TransactionNumber" = old."TransactionNumber" + 1,
+    "SysStartTime" = now(),
 	"RowLevelHashKey" = "Hashing"."CreateSha256KeyFromJsonInputLocaleCountry"(NEW."SalesOrderVehicleId"),
 	"PriorRowLevelHashKey" = old."RowLevelHashKey",
 	"Note" = coalesce(new."Note", 'Row updated'),
@@ -1383,7 +1389,7 @@ BEGIN
       coalesce(old."Note", concat('No Message Transaction Number: ', old."TransactionNumber")),
       old."UserAuthorizationId",
       old."SysStartTime",
-      new."SysStartTime",
+      now(),
       old."RowLevelHashKey",
       old."PriorRowLevelHashKey",
       new."FireAuditTrigger",
@@ -1394,6 +1400,7 @@ BEGIN
     update "Sales"."SalesOrderVehicleDetail"
     SET
     "TransactionNumber" = old."TransactionNumber" + 1,
+    "SysStartTime" = now(),
 	"RowLevelHashKey" = "Hashing"."CreateSha256KeyFromJsonInputLocaleCountry"(NEW."SalesOrderVehicleDetailId"),
 	"PriorRowLevelHashKey" = old."RowLevelHashKey",
 	"Note" = coalesce(new."Note", 'Row updated'),
@@ -1580,7 +1587,7 @@ BEGIN
       coalesce(old."Note", concat('No Message Transaction Number: ', old."TransactionNumber")),
       old."UserAuthorizationId",
       old."SysStartTime",
-      new."SysStartTime",
+      now(),
       old."RowLevelHashKey",
       old."PriorRowLevelHashKey",
       new."FireAuditTrigger",
@@ -1591,6 +1598,7 @@ BEGIN
     update "HumanResources"."Staff"
     SET
     "TransactionNumber" = old."TransactionNumber" + 1,
+    "SysStartTime" = now(),
 	"RowLevelHashKey" = "Hashing"."CreateSha256KeyFromJsonInputLocaleCountry"(NEW."StaffId"),
 	"PriorRowLevelHashKey" = old."RowLevelHashKey",
 	"Note" = coalesce(new."Note", 'Row updated'),
